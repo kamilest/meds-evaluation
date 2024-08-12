@@ -38,14 +38,14 @@ repos:
     rev: v2.2.0
     hooks:
       - id: autoflake
-        args: [ --in-place, --remove-all-unused-imports ]
+        args: [--in-place, --remove-all-unused-imports]
 
   # python sort imports
   - repo: https://github.com/PyCQA/isort
     rev: 5.12.0
     hooks:
       - id: isort
-        args: [ "--profile", "black", "--filter-files", "-o", "wandb" ]
+        args: ["--profile", "black", "--filter-files", "-o", "wandb"]
 
   # python code formatting
   - repo: https://github.com/psf/black
@@ -121,8 +121,4 @@ repos:
       - id: nbqa-isort
         args: ["--profile=black"]
       - id: nbqa-flake8
-        args:
-          [
-            "--extend-ignore=E402",
-            "--exclude=logs/*,data/*",
-          ]
+        args: ["--extend-ignore=E402,E501", "--exclude=logs/*,data/*"]

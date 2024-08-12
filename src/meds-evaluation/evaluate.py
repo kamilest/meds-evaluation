@@ -1,14 +1,11 @@
-from typing import Dict
-
 import polars as pl
-
 
 # TODO: input processing
 #   Ultimately need to detect somehow which set of metrics to obtain based on the task and
 #   the contents of the model prediction dataframe.
 
 
-def evaluate_binary_classification(predictions: pl.DataFrame) -> Dict[str, float]:
+def evaluate_binary_classification(predictions: pl.DataFrame) -> dict[str, float]:
     """Evaluates a set of model predictions for binary classification tasks.
 
     Args:
@@ -21,5 +18,3 @@ def evaluate_binary_classification(predictions: pl.DataFrame) -> Dict[str, float
         TODO: decide on the best output format
         TODO: supporting visual metrics and curves
     """
-
-    pass
