@@ -13,7 +13,7 @@ ensure balanced representation of all patients in the dataset.
 TODO fairness functionality and filtering populations based on complex user-defined criteria.
 """
 
-
+import numpy as np
 import polars as pl
 from numpy.typing import ArrayLike
 from sklearn.metrics import accuracy_score, roc_auc_score
@@ -54,7 +54,61 @@ def evaluate_binary_classification(predictions: pl.DataFrame) -> dict[str, float
     return results
 
 
-def _subsample(predictions: pl.DataFrame, sample_by="patient_id", n_samples=4) -> pl.DataFrame:
-    """Samples (with replacement) the dataframe to represent each value in the sample_by column equally."""
+def _resample(predictions: pl.DataFrame, sampling_column="patient_id", n_samples=1) -> pl.DataFrame:
+    """Samples (with replacement) the dataframe to represent each unique value in the sampling column equally.
 
-    # TODO implementation.
+    Args:
+        predictions: a dataframe following the MEDS label schema
+        sampling_column: the dataframe column according to which to resample
+        n_samples: the number of samples to take for each unique value in the sample_by column
+
+    Returns:
+        A resampled dataframe with n_samples for each unique value in the sample_by column.
+
+    Raises:
+        ValueError: if the sample_by column is not present in the predictions dataframe
+
+    Examples:
+    >>> _resample(pl.DataFrame({"a": [1, 2, 3, 4, 5, 6]}))
+    Traceback (most recent call last):
+    ...
+    ValueError: The model prediction dataframe does not contain the "patient_id" column.
+    >>> _resample(pl.DataFrame({"patient_id": [1, 2, 2, 3, 3, 3]}))
+    shape: (3, 1)
+    ┌────────────┐
+    │ patient_id │
+    │ ---        │
+    │ i64        │
+    ╞════════════╡
+    │ 1          │
+    │ 2          │
+    │ 3          │
+    └────────────┘
+    >>> _resample(pl.DataFrame({"patient_id": [1, 2, 2, 3, 3, 3]}), n_samples=2)
+    shape: (6, 1)
+    ┌────────────┐
+    │ patient_id │
+    │ ---        │
+    │ i64        │
+    ╞════════════╡
+    │ 1          │
+    │ 1          │
+    │ 2          │
+    │ 2          │
+    │ 3          │
+    │ 3          │
+    └────────────┘
+    """
+
+    if sampling_column not in predictions.columns:
+        raise ValueError(f'The model prediction dataframe does not contain the "{sampling_column}" column.')
+
+    sampling_column = predictions[sampling_column].to_numpy()
+
+    # Split the indices of the dataframe by the unique values in the sampling column
+    splits = np.split(np.arange(len(sampling_column)), np.unique(sampling_column, return_index=True)[1][1:])
+    resampled_ids = np.concatenate(
+        [np.random.choice(split, n_samples, replace=True) for split in splits]
+    ).tolist()
+
+    return predictions[resampled_ids]
