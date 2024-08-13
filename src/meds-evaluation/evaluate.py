@@ -19,25 +19,28 @@ from numpy.typing import ArrayLike
 from sklearn.metrics import accuracy_score, f1_score, precision_recall_curve, roc_auc_score, roc_curve
 
 # TODO: input processing for different types of tasks
-#   Ultimately need to detect somehow which set of metrics to obtain based on the task and
-#   the contents of the model prediction dataframe.
+#   detect which set of metrics to obtain based on the task and the contents of the model prediction dataframe
 
 
-def evaluate_binary_classification(predictions: pl.DataFrame) -> dict[str, float | list[ArrayLike]]:
+def evaluate_binary_classification(
+    predictions: pl.DataFrame, samples_per_patient=4
+) -> dict[str, dict[str, float | list[ArrayLike]]]:
     """Evaluates a set of model predictions for binary classification tasks.
 
     Args:
         predictions: a DataFrame following the MEDS label schema and additional columns for
         "predicted_value" and "predicted_probability".
+        samples_per_patient: the number of samples to take for each unique patient_id in the dataframe for
+        per-patient metrics.
 
     Returns:
         A dictionary mapping the metric names to their values.
         The visual (curve-based) metrics will return the raw values needed to create the plot.
 
-    Examples:
-        # TODO
+    Raises:
+        ValueError: if the predictions dataframe does not contain the necessary columns.
     """
-    # Verify the dataframe schema to contain values for the binary dataframes
+    # Verify the dataframe schema to contain required fields for the binary classification metrics
     if "patient_id" not in predictions.columns:
         raise ValueError('The model prediction dataframe does not contain the "patient_id" column.')
     if "binary_value" not in predictions.columns:
@@ -49,18 +52,22 @@ def evaluate_binary_classification(predictions: pl.DataFrame) -> dict[str, float
             'The model prediction dataframe does not contain the "predicted_probability" column.'
         )
 
-    # Extract true/predicted values/scores/probabilities from the predictions dataframe
     true_values = predictions["binary_value"]
     predicted_values = predictions["predicted_value"]
     predicted_probabilities = predictions["predicted_probability"]
-    # TODO: patient-level subsampling
+
+    resampled_predictions = _resample(predictions, n_samples=samples_per_patient)
+    true_values_resampled = resampled_predictions["binary_value"]
+    predicted_values_resampled = resampled_predictions["predicted_value"]
+    predicted_probabilities_resampled = resampled_predictions["predicted_probability"]
 
     results = {
-        "binary_accuracy": accuracy_score(true_values, predicted_values),
-        "f1_score": f1_score(true_values, predicted_values),
-        "precision_recall_curve": precision_recall_curve(true_values, predicted_probabilities),
-        "roc_auc_score": roc_auc_score(true_values, predicted_probabilities),
-        "roc_curve": roc_curve(true_values, predicted_probabilities),
+        "all_samples": _get_binary_classification_metrics(
+            true_values, predicted_values, predicted_probabilities
+        ),
+        "resampled": _get_binary_classification_metrics(
+            true_values_resampled, predicted_values_resampled, predicted_probabilities_resampled
+        ),
     }
 
     return results
@@ -124,3 +131,26 @@ def _resample(predictions: pl.DataFrame, sampling_column="patient_id", n_samples
     ).tolist()
 
     return predictions[resampled_ids]
+
+
+def _get_binary_classification_metrics(
+    true_values: ArrayLike, predicted_values: ArrayLike, predicted_probabilities: ArrayLike
+) -> dict[str, float | list[ArrayLike]]:
+    """Calculates a set of binary classification metrics based on the true and predicted values.
+
+    Args:
+        true_values: the true binary values
+        predicted_values: the predicted binary values
+        predicted_probabilities: the predicted probabilities
+
+    Returns:
+        A dictionary mapping the metric names to their values.
+        The visual (curve-based) metrics will return the raw values needed to create the plot.
+    """
+    return {
+        "binary_accuracy": accuracy_score(true_values, predicted_values),
+        "f1_score": f1_score(true_values, predicted_values),
+        "precision_recall_curve": precision_recall_curve(true_values, predicted_probabilities),
+        "roc_auc_score": roc_auc_score(true_values, predicted_probabilities),
+        "roc_curve": roc_curve(true_values, predicted_probabilities),
+    }
