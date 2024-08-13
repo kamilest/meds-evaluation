@@ -16,7 +16,7 @@ TODO fairness functionality and filtering populations based on complex user-defi
 import numpy as np
 import polars as pl
 from numpy.typing import ArrayLike
-from sklearn.metrics import accuracy_score, roc_auc_score
+from sklearn.metrics import accuracy_score, f1_score, precision_recall_curve, roc_auc_score, roc_curve
 
 # TODO: input processing for different types of tasks
 #   Ultimately need to detect somehow which set of metrics to obtain based on the task and
@@ -38,6 +38,16 @@ def evaluate_binary_classification(predictions: pl.DataFrame) -> dict[str, float
         # TODO
     """
     # Verify the dataframe schema to contain values for the binary dataframes
+    if "patient_id" not in predictions.columns:
+        raise ValueError('The model prediction dataframe does not contain the "patient_id" column.')
+    if "binary_value" not in predictions.columns:
+        raise ValueError('The model prediction dataframe does not contain the "binary_value" column.')
+    if "predicted_value" not in predictions.columns:
+        raise ValueError('The model prediction dataframe does not contain the "predicted_value" column.')
+    if "predicted_probability" not in predictions.columns:
+        raise ValueError(
+            'The model prediction dataframe does not contain the "predicted_probability" column.'
+        )
 
     # Extract true/predicted values/scores/probabilities from the predictions dataframe
     true_values = predictions["binary_value"]
@@ -47,8 +57,10 @@ def evaluate_binary_classification(predictions: pl.DataFrame) -> dict[str, float
 
     results = {
         "binary_accuracy": accuracy_score(true_values, predicted_values),
+        "f1_score": f1_score(true_values, predicted_values),
+        "precision_recall_curve": precision_recall_curve(true_values, predicted_probabilities),
         "roc_auc_score": roc_auc_score(true_values, predicted_probabilities),
-        # TODO add more binary evaluation scores: precision/recall/F1, ROC, calibration curve
+        "roc_curve": roc_curve(true_values, predicted_probabilities),
     }
 
     return results
