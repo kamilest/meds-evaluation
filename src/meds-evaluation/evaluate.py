@@ -41,6 +41,7 @@ def evaluate_binary_classification(
         ValueError: if the predictions dataframe does not contain the necessary columns.
     """
     # Verify the dataframe schema to contain required fields for the binary classification metrics
+    # TODO: verify types, maybe using pyarrow schemas?
     if "patient_id" not in predictions.columns:
         raise ValueError('The model prediction dataframe does not contain the "patient_id" column.')
     if "binary_value" not in predictions.columns:
@@ -56,7 +57,8 @@ def evaluate_binary_classification(
     predicted_values = predictions["predicted_value"]
     predicted_probabilities = predictions["predicted_probability"]
 
-    resampled_predictions = _resample(predictions, n_samples=samples_per_patient)
+    resampled_predictions = _resample(predictions, sampling_column="patient_id",
+                                      n_samples=samples_per_patient)
     true_values_resampled = resampled_predictions["binary_value"]
     predicted_values_resampled = resampled_predictions["predicted_value"]
     predicted_probabilities_resampled = resampled_predictions["predicted_probability"]
