@@ -15,6 +15,7 @@ TODO fairness functionality and filtering populations based on complex user-defi
 
 import numpy as np
 import polars as pl
+import pyarrow as pa
 from numpy.typing import ArrayLike
 from sklearn.calibration import calibration_curve
 from sklearn.metrics import accuracy_score, f1_score, precision_recall_curve, roc_auc_score, roc_curve
@@ -43,7 +44,7 @@ def evaluate_binary_classification(
         ValueError: if the predictions dataframe does not contain the necessary columns.
     """
     # Verify the dataframe schema to contain required fields for the binary classification metrics
-    _check_binary_classification_format(predictions)
+    _check_binary_classification_schema(predictions)
 
     true_values = predictions["binary_value"]
     predicted_values = predictions["predicted_value"]
@@ -127,7 +128,7 @@ def _resample(predictions: pl.DataFrame, sampling_column="subject_id", n_samples
     return predictions[resampled_ids]
 
 
-def _check_binary_classification_format(predictions: pl.DataFrame) -> None:
+def _check_binary_classification_schema(predictions: pl.DataFrame) -> None:
     """Checks if the predictions dataframe contains the necessary columns for binary classification metrics.
 
     Args:
@@ -137,21 +138,24 @@ def _check_binary_classification_format(predictions: pl.DataFrame) -> None:
     Raises:
         ValueError: if the predictions dataframe does not contain the necessary columns.
     """
-    # TODO: verify types, maybe using pyarrow schemas?
-    if "subject_id" not in predictions.columns:
-        raise ValueError('The model prediction dataframe does not contain the "subject_id" column.')
-    if "binary_value" not in predictions.columns:
-        raise ValueError('The model prediction dataframe does not contain the "binary_value" column.')
-    if "predicted_value" not in predictions.columns:
-        raise ValueError('The model prediction dataframe does not contain the "predicted_value" column.')
-    if "predicted_probability" not in predictions.columns:
-        raise ValueError(
-            'The model prediction dataframe does not contain the "predicted_probability" column.'
-        )
+    BINARY_CLASSIFICATION_SCHEMA = pa.schema(
+        [
+            ("subject_id", pa.int64()),
+            ("prediction_time", pa.timestamp("us")),
+            ("boolean_value", pa.bool_()),
+            ("predicted_value", pa.bool_()),
+            ("predicted_probability", pa.float64()),
+        ]
+    )
+
+    if not predictions.to_arrow().schema.equals(BINARY_CLASSIFICATION_SCHEMA):
+        raise ValueError("The prediction dataframe does not follow the MEDS binary classification schema.\n"
+                         f"Expected schema:\n{str(BINARY_CLASSIFICATION_SCHEMA)}\n"
+                         f"Received:\n{str(predictions.to_arrow().schema)}")
 
 
 def _get_binary_classification_metrics(
-    true_values: ArrayLike, predicted_values: ArrayLike, predicted_probabilities: ArrayLike
+    true_values: ArrayLike[bool], predicted_values: ArrayLike[bool], predicted_probabilities: ArrayLike[float]
 ) -> dict[str, float | list[ArrayLike]]:
     """Calculates a set of binary classification metrics based on the true and predicted values.
 
@@ -168,6 +172,8 @@ def _get_binary_classification_metrics(
 
     c = calibration_curve(true_values, predicted_probabilities, n_bins=10)
     calibration_error = np.abs(c[0] - c[1]).mean()
+
+    # TODO only compute probability metrics if the probabilities are available
 
     return {
         "binary_accuracy": accuracy_score(true_values, predicted_values),
