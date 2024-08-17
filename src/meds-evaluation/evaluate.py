@@ -16,6 +16,7 @@ TODO fairness functionality and filtering populations based on complex user-defi
 import numpy as np
 import polars as pl
 from numpy.typing import ArrayLike
+from sklearn.calibration import calibration_curve
 from sklearn.metrics import accuracy_score, f1_score, precision_recall_curve, roc_auc_score, roc_curve
 
 # TODO: input processing for different types of tasks
@@ -32,6 +33,7 @@ def evaluate_binary_classification(
         "predicted_value" and "predicted_probability".
         samples_per_patient: the number of samples to take for each unique patient_id in the dataframe for
         per-patient metrics.
+        # TODO consider adding a parameter for the metric set to evaluate
 
     Returns:
         A dictionary mapping the metric names to their values.
@@ -87,7 +89,7 @@ def _resample(predictions: pl.DataFrame, sampling_column="patient_id", n_samples
         A resampled dataframe with n_samples for each unique value in the sample_by column.
 
     Raises:
-        ValueError: if the sample_by column is not present in the predictions dataframe
+        ValueError: if the sampling column is not present in the predictions dataframe
 
     Examples:
     >>> _resample(pl.DataFrame({"a": [1, 2, 3, 4, 5, 6]}))
@@ -144,15 +146,19 @@ def _get_binary_classification_metrics(
         true_values: the true binary values
         predicted_values: the predicted binary values
         predicted_probabilities: the predicted probabilities
+        # TODO consider the list of metrics
 
     Returns:
         A dictionary mapping the metric names to their values.
         The visual (curve-based) metrics will return the raw values needed to create the plot.
     """
+
+    # TODO calibration metrics: calibration curve, any other uncertainty metrics
     return {
         "binary_accuracy": accuracy_score(true_values, predicted_values),
         "f1_score": f1_score(true_values, predicted_values),
         "precision_recall_curve": precision_recall_curve(true_values, predicted_probabilities),
         "roc_auc_score": roc_auc_score(true_values, predicted_probabilities),
         "roc_curve": roc_curve(true_values, predicted_probabilities),
+        "calibration_curve": calibration_curve(true_values, predicted_probabilities, n_bins=10),
     }
