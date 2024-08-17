@@ -46,13 +46,13 @@ def evaluate_binary_classification(
     # Verify the dataframe schema to contain required fields for the binary classification metrics
     _check_binary_classification_schema(predictions)
 
-    true_values = predictions["binary_value"]
+    true_values = predictions["boolean_value"]
     predicted_values = predictions["predicted_value"]
     predicted_probabilities = predictions["predicted_probability"]
 
     resampled_predictions = _resample(predictions, sampling_column="subject_id",
                                       n_samples=samples_per_subject)
-    true_values_resampled = resampled_predictions["binary_value"]
+    true_values_resampled = resampled_predictions["boolean_value"]
     predicted_values_resampled = resampled_predictions["predicted_value"]
     predicted_probabilities_resampled = resampled_predictions["predicted_probability"]
 
