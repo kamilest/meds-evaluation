@@ -153,12 +153,15 @@ def _get_binary_classification_metrics(
         The visual (curve-based) metrics will return the raw values needed to create the plot.
     """
 
-    # TODO calibration metrics: calibration curve, any other uncertainty metrics
+    c = calibration_curve(true_values, predicted_probabilities, n_bins=10)
+    calibration_error = np.abs(c[0] - c[1]).mean()
+
     return {
         "binary_accuracy": accuracy_score(true_values, predicted_values),
         "f1_score": f1_score(true_values, predicted_values),
         "precision_recall_curve": precision_recall_curve(true_values, predicted_probabilities),
         "roc_auc_score": roc_auc_score(true_values, predicted_probabilities),
         "roc_curve": roc_curve(true_values, predicted_probabilities),
-        "calibration_curve": calibration_curve(true_values, predicted_probabilities, n_bins=10),
+        "calibration_curve": c,
+        "calibration_error:": calibration_error,
     }
