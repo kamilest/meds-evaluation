@@ -7,8 +7,8 @@ See
     https://scikit-learn.org/stable/api/sklearn.metrics.html
     https://scikit-learn.org/stable/modules/model_evaluation.html#classification-metrics
 
-Additionally, functionality for evaluating metrics on a per-sample vs per-patient basis is provided to
-ensure balanced representation of all patients in the dataset.
+Additionally, functionality for evaluating metrics on a per-sample vs per-subject basis is provided to
+ensure balanced representation of all subjects in the dataset.
 
 TODO fairness functionality and filtering populations based on complex user-defined criteria.
 """
@@ -24,15 +24,15 @@ from sklearn.metrics import accuracy_score, f1_score, precision_recall_curve, ro
 
 
 def evaluate_binary_classification(
-    predictions: pl.DataFrame, samples_per_patient=4
+    predictions: pl.DataFrame, samples_per_subject=4
 ) -> dict[str, dict[str, float | list[ArrayLike]]]:
     """Evaluates a set of model predictions for binary classification tasks.
 
     Args:
         predictions: a DataFrame following the MEDS label schema and additional columns for
         "predicted_value" and "predicted_probability".
-        samples_per_patient: the number of samples to take for each unique patient_id in the dataframe for
-        per-patient metrics.
+        samples_per_subject: the number of samples to take for each unique subject_id in the dataframe for
+        per-subject metrics.
         # TODO consider adding a parameter for the metric set to evaluate
 
     Returns:
@@ -49,8 +49,8 @@ def evaluate_binary_classification(
     predicted_values = predictions["predicted_value"]
     predicted_probabilities = predictions["predicted_probability"]
 
-    resampled_predictions = _resample(predictions, sampling_column="patient_id",
-                                      n_samples=samples_per_patient)
+    resampled_predictions = _resample(predictions, sampling_column="subject_id",
+                                      n_samples=samples_per_subject)
     true_values_resampled = resampled_predictions["binary_value"]
     predicted_values_resampled = resampled_predictions["predicted_value"]
     predicted_probabilities_resampled = resampled_predictions["predicted_probability"]
@@ -67,7 +67,7 @@ def evaluate_binary_classification(
     return results
 
 
-def _resample(predictions: pl.DataFrame, sampling_column="patient_id", n_samples=1) -> pl.DataFrame:
+def _resample(predictions: pl.DataFrame, sampling_column="subject_id", n_samples=1) -> pl.DataFrame:
     """Samples (with replacement) the dataframe to represent each unique value in the sampling column equally.
 
     Args:
@@ -85,11 +85,11 @@ def _resample(predictions: pl.DataFrame, sampling_column="patient_id", n_samples
     >>> _resample(pl.DataFrame({"a": [1, 2, 3, 4, 5, 6]}))
     Traceback (most recent call last):
     ...
-    ValueError: The model prediction dataframe does not contain the "patient_id" column.
-    >>> _resample(pl.DataFrame({"patient_id": [1, 2, 2, 3, 3, 3]}))
+    ValueError: The model prediction dataframe does not contain the "subject_id" column.
+    >>> _resample(pl.DataFrame({"subject_id": [1, 2, 2, 3, 3, 3]}))
     shape: (3, 1)
     ┌────────────┐
-    │ patient_id │
+    │ subject_id │
     │ ---        │
     │ i64        │
     ╞════════════╡
@@ -97,10 +97,10 @@ def _resample(predictions: pl.DataFrame, sampling_column="patient_id", n_samples
     │ 2          │
     │ 3          │
     └────────────┘
-    >>> _resample(pl.DataFrame({"patient_id": [1, 2, 2, 3, 3, 3]}), n_samples=2)
+    >>> _resample(pl.DataFrame({"subject_id": [1, 2, 2, 3, 3, 3]}), n_samples=2)
     shape: (6, 1)
     ┌────────────┐
-    │ patient_id │
+    │ subject_id │
     │ ---        │
     │ i64        │
     ╞════════════╡
@@ -138,8 +138,8 @@ def _check_binary_classification_format(predictions: pl.DataFrame) -> None:
         ValueError: if the predictions dataframe does not contain the necessary columns.
     """
     # TODO: verify types, maybe using pyarrow schemas?
-    if "patient_id" not in predictions.columns:
-        raise ValueError('The model prediction dataframe does not contain the "patient_id" column.')
+    if "subject_id" not in predictions.columns:
+        raise ValueError('The model prediction dataframe does not contain the "subject_id" column.')
     if "binary_value" not in predictions.columns:
         raise ValueError('The model prediction dataframe does not contain the "binary_value" column.')
     if "predicted_value" not in predictions.columns:
