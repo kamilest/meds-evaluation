@@ -48,20 +48,14 @@ def evaluate_binary_classification(
 
     true_values = predictions["boolean_value"]
     predicted_values = predictions["predicted_value"]
-
     predicted_probabilities = predictions["predicted_probability"]
-    if predicted_probabilities.is_null().all():
-        predicted_probabilities = None
 
     resampled_predictions = _resample(
         predictions, sampling_column="subject_id", n_samples=samples_per_subject
     )
     true_values_resampled = resampled_predictions["boolean_value"]
     predicted_values_resampled = resampled_predictions["predicted_value"]
-
     predicted_probabilities_resampled = resampled_predictions["predicted_probability"]
-    if predicted_probabilities_resampled.is_null().all():
-        predicted_probabilities_resampled = None
 
     results = {
         "all_samples": _get_binary_classification_metrics(
@@ -166,7 +160,7 @@ def _check_binary_classification_schema(predictions: pl.DataFrame) -> None:
 def _get_binary_classification_metrics(
     true_values: ArrayLike[bool],
     predicted_values: ArrayLike[bool],
-    predicted_probabilities: ArrayLike[float] | None = None,
+    predicted_probabilities: ArrayLike[float],
 ) -> dict[str, float | list[ArrayLike]]:
     """Calculates a set of binary classification metrics based on the true and predicted values.
 
@@ -184,15 +178,13 @@ def _get_binary_classification_metrics(
     results = {
         "binary_accuracy": accuracy_score(true_values, predicted_values),
         "f1_score": f1_score(true_values, predicted_values),
+        "roc_auc_score": roc_auc_score(true_values, predicted_probabilities),
+        "roc_curve": roc_curve(true_values, predicted_probabilities),
+        "precision_recall_curve": precision_recall_curve(true_values, predicted_probabilities),
     }
 
-    if predicted_probabilities is not None:
-        results["roc_auc_score"] = roc_auc_score(true_values, predicted_probabilities)
-        results["roc_curve"] = roc_curve(true_values, predicted_probabilities)
-        results["precision_recall_curve"] = precision_recall_curve(true_values, predicted_probabilities)
-
-        c = calibration_curve(true_values, predicted_probabilities, n_bins=10)
-        results["calibration_curve"] = c
-        results["calibration_error"] = np.abs(c[0] - c[1]).mean()
+    c = calibration_curve(true_values, predicted_probabilities, n_bins=10)
+    results["calibration_curve"] = c
+    results["calibration_error"] = np.abs(c[0] - c[1]).mean()
 
     return results
