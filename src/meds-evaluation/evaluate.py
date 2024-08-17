@@ -43,17 +43,7 @@ def evaluate_binary_classification(
         ValueError: if the predictions dataframe does not contain the necessary columns.
     """
     # Verify the dataframe schema to contain required fields for the binary classification metrics
-    # TODO: verify types, maybe using pyarrow schemas?
-    if "patient_id" not in predictions.columns:
-        raise ValueError('The model prediction dataframe does not contain the "patient_id" column.')
-    if "binary_value" not in predictions.columns:
-        raise ValueError('The model prediction dataframe does not contain the "binary_value" column.')
-    if "predicted_value" not in predictions.columns:
-        raise ValueError('The model prediction dataframe does not contain the "predicted_value" column.')
-    if "predicted_probability" not in predictions.columns:
-        raise ValueError(
-            'The model prediction dataframe does not contain the "predicted_probability" column.'
-        )
+    _check_binary_classification_format(predictions)
 
     true_values = predictions["binary_value"]
     predicted_values = predictions["predicted_value"]
@@ -135,6 +125,29 @@ def _resample(predictions: pl.DataFrame, sampling_column="patient_id", n_samples
     ).tolist()
 
     return predictions[resampled_ids]
+
+
+def _check_binary_classification_format(predictions: pl.DataFrame) -> None:
+    """Checks if the predictions dataframe contains the necessary columns for binary classification metrics.
+
+    Args:
+        predictions: a DataFrame following the MEDS label schema and additional columns for
+        "predicted_value" and "predicted_probability".
+
+    Raises:
+        ValueError: if the predictions dataframe does not contain the necessary columns.
+    """
+    # TODO: verify types, maybe using pyarrow schemas?
+    if "patient_id" not in predictions.columns:
+        raise ValueError('The model prediction dataframe does not contain the "patient_id" column.')
+    if "binary_value" not in predictions.columns:
+        raise ValueError('The model prediction dataframe does not contain the "binary_value" column.')
+    if "predicted_value" not in predictions.columns:
+        raise ValueError('The model prediction dataframe does not contain the "predicted_value" column.')
+    if "predicted_probability" not in predictions.columns:
+        raise ValueError(
+            'The model prediction dataframe does not contain the "predicted_probability" column.'
+        )
 
 
 def _get_binary_classification_metrics(
