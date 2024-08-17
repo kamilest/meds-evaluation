@@ -12,6 +12,7 @@ ensure balanced representation of all subjects in the dataset.
 
 TODO fairness functionality and filtering populations based on complex user-defined criteria.
 """
+from typing import Optional
 
 import numpy as np
 import polars as pl
@@ -19,6 +20,7 @@ import pyarrow as pa
 from numpy.typing import ArrayLike
 from sklearn.calibration import calibration_curve
 from sklearn.metrics import accuracy_score, f1_score, precision_recall_curve, roc_auc_score, roc_curve
+
 
 # TODO: input processing for different types of tasks
 #   detect which set of metrics to obtain based on the task and the contents of the model prediction dataframe
@@ -48,13 +50,19 @@ def evaluate_binary_classification(
 
     true_values = predictions["boolean_value"]
     predicted_values = predictions["predicted_value"]
+
     predicted_probabilities = predictions["predicted_probability"]
+    if predicted_probabilities.is_null().all():
+        predicted_probabilities = None
 
     resampled_predictions = _resample(predictions, sampling_column="subject_id",
                                       n_samples=samples_per_subject)
     true_values_resampled = resampled_predictions["boolean_value"]
     predicted_values_resampled = resampled_predictions["predicted_value"]
+
     predicted_probabilities_resampled = resampled_predictions["predicted_probability"]
+    if predicted_probabilities_resampled.is_null().all():
+        predicted_probabilities_resampled = None
 
     results = {
         "all_samples": _get_binary_classification_metrics(
@@ -155,7 +163,8 @@ def _check_binary_classification_schema(predictions: pl.DataFrame) -> None:
 
 
 def _get_binary_classification_metrics(
-    true_values: ArrayLike[bool], predicted_values: ArrayLike[bool], predicted_probabilities: ArrayLike[float]
+    true_values: ArrayLike[bool], predicted_values: ArrayLike[bool],
+    predicted_probabilities: Optional[ArrayLike[float]] = None
 ) -> dict[str, float | list[ArrayLike]]:
     """Calculates a set of binary classification metrics based on the true and predicted values.
 
@@ -163,24 +172,25 @@ def _get_binary_classification_metrics(
         true_values: the true binary values
         predicted_values: the predicted binary values
         predicted_probabilities: the predicted probabilities
-        # TODO consider the list of metrics
+        TODO consider the list of metrics
 
     Returns:
         A dictionary mapping the metric names to their values.
         The visual (curve-based) metrics will return the raw values needed to create the plot.
     """
 
-    c = calibration_curve(true_values, predicted_probabilities, n_bins=10)
-    calibration_error = np.abs(c[0] - c[1]).mean()
-
-    # TODO only compute probability metrics if the probabilities are available
-
-    return {
+    results = {
         "binary_accuracy": accuracy_score(true_values, predicted_values),
         "f1_score": f1_score(true_values, predicted_values),
-        "precision_recall_curve": precision_recall_curve(true_values, predicted_probabilities),
-        "roc_auc_score": roc_auc_score(true_values, predicted_probabilities),
-        "roc_curve": roc_curve(true_values, predicted_probabilities),
-        "calibration_curve": c,
-        "calibration_error:": calibration_error,
     }
+
+    if predicted_probabilities is not None:
+        results["roc_auc_score"] = roc_auc_score(true_values, predicted_probabilities)
+        results["roc_curve"] = roc_curve(true_values, predicted_probabilities)
+        results["precision_recall_curve"] = precision_recall_curve(true_values, predicted_probabilities)
+
+        c = calibration_curve(true_values, predicted_probabilities, n_bins=10)
+        results["calibration_curve"] = c
+        results["calibration_error"] = np.abs(c[0] - c[1]).mean()
+
+    return results
