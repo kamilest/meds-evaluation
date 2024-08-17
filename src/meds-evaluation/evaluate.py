@@ -12,7 +12,6 @@ ensure balanced representation of all subjects in the dataset.
 
 TODO fairness functionality and filtering populations based on complex user-defined criteria.
 """
-from typing import Optional
 
 import numpy as np
 import polars as pl
@@ -20,7 +19,6 @@ import pyarrow as pa
 from numpy.typing import ArrayLike
 from sklearn.calibration import calibration_curve
 from sklearn.metrics import accuracy_score, f1_score, precision_recall_curve, roc_auc_score, roc_curve
-
 
 # TODO: input processing for different types of tasks
 #   detect which set of metrics to obtain based on the task and the contents of the model prediction dataframe
@@ -55,8 +53,9 @@ def evaluate_binary_classification(
     if predicted_probabilities.is_null().all():
         predicted_probabilities = None
 
-    resampled_predictions = _resample(predictions, sampling_column="subject_id",
-                                      n_samples=samples_per_subject)
+    resampled_predictions = _resample(
+        predictions, sampling_column="subject_id", n_samples=samples_per_subject
+    )
     true_values_resampled = resampled_predictions["boolean_value"]
     predicted_values_resampled = resampled_predictions["predicted_value"]
 
@@ -157,14 +156,17 @@ def _check_binary_classification_schema(predictions: pl.DataFrame) -> None:
     )
 
     if not predictions.to_arrow().schema.equals(BINARY_CLASSIFICATION_SCHEMA):
-        raise ValueError("The prediction dataframe does not follow the MEDS binary classification schema.\n"
-                         f"Expected schema:\n{str(BINARY_CLASSIFICATION_SCHEMA)}\n"
-                         f"Received:\n{str(predictions.to_arrow().schema)}")
+        raise ValueError(
+            "The prediction dataframe does not follow the MEDS binary classification schema.\n"
+            f"Expected schema:\n{str(BINARY_CLASSIFICATION_SCHEMA)}\n"
+            f"Received:\n{str(predictions.to_arrow().schema)}"
+        )
 
 
 def _get_binary_classification_metrics(
-    true_values: ArrayLike[bool], predicted_values: ArrayLike[bool],
-    predicted_probabilities: Optional[ArrayLike[float]] = None
+    true_values: ArrayLike[bool],
+    predicted_values: ArrayLike[bool],
+    predicted_probabilities: ArrayLike[float] | None = None,
 ) -> dict[str, float | list[ArrayLike]]:
     """Calculates a set of binary classification metrics based on the true and predicted values.
 
