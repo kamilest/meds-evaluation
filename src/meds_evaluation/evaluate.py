@@ -158,9 +158,9 @@ def _check_binary_classification_schema(predictions: pl.DataFrame) -> None:
 
 
 def _get_binary_classification_metrics(
-    true_values: ArrayLike[bool],
-    predicted_values: ArrayLike[bool],
-    predicted_probabilities: ArrayLike[float],
+    true_values: ArrayLike,
+    predicted_values: ArrayLike,
+    predicted_probabilities: ArrayLike,
 ) -> dict[str, float | list[ArrayLike]]:
     """Calculates a set of binary classification metrics based on the true and predicted values.
 
