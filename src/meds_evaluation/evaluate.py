@@ -20,6 +20,12 @@ from numpy.typing import ArrayLike
 from sklearn.calibration import calibration_curve
 from sklearn.metrics import accuracy_score, f1_score, precision_recall_curve, roc_auc_score, roc_curve
 
+SUBJECT_ID = "subject_id"
+
+BOOLEAN_VALUE_COLUMN = "boolean_value"
+PREDICTED_BOOLEAN_VALUE_COLUMN = "predicted_boolean_value"
+PREDICTED_BOOLEAN_PROBABILITY_COLUMN = "predicted_boolean_probability"
+
 # TODO: input processing for different types of tasks
 #   detect which set of metrics to obtain based on the task and the contents of the model prediction dataframe
 
@@ -46,16 +52,14 @@ def evaluate_binary_classification(
     # Verify the dataframe schema to contain required fields for the binary classification metrics
     _check_binary_classification_schema(predictions)
 
-    true_values = predictions["boolean_value"]
-    predicted_values = predictions["predicted_value"]
-    predicted_probabilities = predictions["predicted_probability"]
+    true_values = predictions[BOOLEAN_VALUE_COLUMN]
+    predicted_values = predictions[PREDICTED_BOOLEAN_VALUE_COLUMN]
+    predicted_probabilities = predictions[PREDICTED_BOOLEAN_PROBABILITY_COLUMN]
 
-    resampled_predictions = _resample(
-        predictions, sampling_column="subject_id", n_samples=samples_per_subject
-    )
-    true_values_resampled = resampled_predictions["boolean_value"]
-    predicted_values_resampled = resampled_predictions["predicted_value"]
-    predicted_probabilities_resampled = resampled_predictions["predicted_probability"]
+    resampled_predictions = _resample(predictions, sampling_column=SUBJECT_ID, n_samples=samples_per_subject)
+    true_values_resampled = resampled_predictions[BOOLEAN_VALUE_COLUMN]
+    predicted_values_resampled = resampled_predictions[PREDICTED_BOOLEAN_VALUE_COLUMN]
+    predicted_probabilities_resampled = resampled_predictions[PREDICTED_BOOLEAN_PROBABILITY_COLUMN]
 
     results = {
         "all_samples": _get_binary_classification_metrics(
@@ -69,7 +73,7 @@ def evaluate_binary_classification(
     return results
 
 
-def _resample(predictions: pl.DataFrame, sampling_column="subject_id", n_samples=1) -> pl.DataFrame:
+def _resample(predictions: pl.DataFrame, sampling_column=SUBJECT_ID, n_samples=1) -> pl.DataFrame:
     """Samples (with replacement) the dataframe to represent each unique value in the sampling column equally.
 
     Args:
@@ -134,18 +138,19 @@ def _check_binary_classification_schema(predictions: pl.DataFrame) -> None:
 
     Args:
         predictions: a DataFrame following the MEDS label schema and additional columns for
-        "predicted_value" and "predicted_probability".
+        "predicted_boolean_value" and "predicted_boolean_probability".
 
     Raises:
         ValueError: if the predictions dataframe does not contain the necessary columns.
     """
+    # TODO import and extend MEDS label schema
     BINARY_CLASSIFICATION_SCHEMA = pa.schema(
         [
-            ("subject_id", pa.int64()),
+            (SUBJECT_ID, pa.int64()),
             ("prediction_time", pa.timestamp("us")),
-            ("boolean_value", pa.bool_()),
-            ("predicted_value", pa.bool_()),
-            ("predicted_probability", pa.float64()),
+            (BOOLEAN_VALUE_COLUMN, pa.bool_()),
+            (PREDICTED_BOOLEAN_VALUE_COLUMN, pa.bool_()),
+            (PREDICTED_BOOLEAN_PROBABILITY_COLUMN, pa.float64()),
         ]
     )
 
