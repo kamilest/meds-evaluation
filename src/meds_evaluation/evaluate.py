@@ -62,14 +62,15 @@ def evaluate_binary_classification(
     predicted_probabilities_resampled = resampled_predictions[PREDICTED_BOOLEAN_PROBABILITY_COLUMN]
 
     results = {
-        "all_samples": _get_binary_classification_metrics(
+        "samples_equally_weighted": _get_binary_classification_metrics(
             true_values, predicted_values, predicted_probabilities
         ),
-        "resampled": _get_binary_classification_metrics(
+        "subjects_equally_weighted": _get_binary_classification_metrics(
             true_values_resampled, predicted_values_resampled, predicted_probabilities_resampled
         ),
     }
 
+    # TODO write to output file
     return results
 
 
