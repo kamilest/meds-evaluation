@@ -3,7 +3,7 @@ requires = ["setuptools>=64", "setuptools-scm>=8.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "meds-evaluation"
+name = "meds_evaluation"
 dynamic = ["version"]
 authors = [
     { name = "Kamilė Stankevičiūtė", email = "kamile.stankeviciute@cst.cam.ac.uk" },
