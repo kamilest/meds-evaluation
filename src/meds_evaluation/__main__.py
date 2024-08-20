@@ -24,7 +24,7 @@ def main(cfg: DictConfig) -> None:
     predictions = pl.read_parquet(cfg.predictions_path)
 
     # Set output path
-    evaluation_output_dir = Path(cfg.evaluation_output_dir)
+    evaluation_output_dir = Path(cfg.output_dir)
     evaluation_output_dir.mkdir(exist_ok=True, parents=True)
 
     # Run the evaluation
