@@ -132,10 +132,12 @@ def _resample(predictions: pl.DataFrame, sampling_column=SUBJECT_ID, n_samples=1
     └────────────┘
     """
 
+    # TODO resampling empty dataframe should throw an error
+
     if sampling_column not in predictions.columns:
         raise ValueError(f'The model prediction dataframe does not contain the "{sampling_column}" column.')
 
-    predictions_sorted = predictions.sort(SUBJECT_ID)
+    predictions_sorted = predictions.sort(sampling_column)
     sampling_column = predictions_sorted[sampling_column].to_numpy()
 
     # Split the indices of the dataframe by the unique values in the sampling column
