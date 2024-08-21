@@ -123,11 +123,27 @@ def _resample(
     │ 3          │
     │ 3          │
     └────────────┘
+    >>> _resample(pl.DataFrame({"subject_id": [1, 3, 4, 2, 2, 3, 3, 3, 1]}), n_samples=1)
+    shape: (4, 1)
+    ┌────────────┐
+    │ subject_id │
+    │ ---        │
+    │ i64        │
+    ╞════════════╡
+    │ 1          │
+    │ 2          │
+    │ 3          │
+    │ 4          │
+    └────────────┘
     """
+
+    # TODO resampling empty dataframe should throw an error
+
     if sampling_column not in predictions.columns:
         raise ValueError(f'The model prediction dataframe does not contain the "{sampling_column}" column.')
 
-    sampling_column = predictions[sampling_column].to_numpy()
+    predictions_sorted = predictions.sort(sampling_column)
+    sampling_column = predictions_sorted[sampling_column].to_numpy()
 
     # Split the indices of the dataframe by the unique values in the sampling column
     np.random.seed(random_seed)
@@ -136,7 +152,7 @@ def _resample(
         [np.random.choice(split, n_samples, replace=True) for split in splits]
     ).tolist()
 
-    return predictions[resampled_ids]
+    return predictions_sorted[resampled_ids]
 
 
 def _check_binary_classification_schema(predictions: pl.DataFrame) -> None:
