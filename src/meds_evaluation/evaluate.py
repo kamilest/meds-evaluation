@@ -130,6 +130,18 @@ def _resample(predictions: pl.DataFrame, sampling_column=SUBJECT_ID, n_samples=1
     │ 3          │
     │ 4          │
     └────────────┘
+    >>> _resample(pl.DataFrame({"a": [1, 3, 4, 2, 2, 3, 3, 3, 1]}), sampling_column="a", n_samples=1)
+    shape: (4, 1)
+    ┌─────┐
+    │ a   │
+    │ --- │
+    │ i64 │
+    ╞═════╡
+    │ 1   │
+    │ 2   │
+    │ 3   │
+    │ 4   │
+    └─────┘
     """
 
     # TODO resampling empty dataframe should throw an error
