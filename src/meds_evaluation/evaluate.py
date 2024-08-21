@@ -31,7 +31,7 @@ PREDICTED_BOOLEAN_PROBABILITY_COLUMN = "predicted_boolean_probability"
 
 
 def evaluate_binary_classification(
-    predictions: pl.DataFrame, samples_per_subject=4, random_seed=0
+    predictions: pl.DataFrame, samples_per_subject=4, resampling_seed=0
 ) -> dict[str, dict[str, float | list[ArrayLike]]]:
     """Evaluates a set of model predictions for binary classification tasks.
 
@@ -40,7 +40,7 @@ def evaluate_binary_classification(
         "predicted_value" and "predicted_probability".
         samples_per_subject: the number of samples to take for each unique subject_id in the dataframe for
         per-subject metrics.
-        random_seed: random seed for resampling the dataframe.
+        resampling_seed: random seed for resampling the dataframe.
         # TODO consider adding a parameter for the metric set to evaluate
 
     Returns:
@@ -58,7 +58,7 @@ def evaluate_binary_classification(
     predicted_probabilities = predictions[PREDICTED_BOOLEAN_PROBABILITY_COLUMN]
 
     resampled_predictions = _resample(
-        predictions, sampling_column=SUBJECT_ID, n_samples=samples_per_subject, random_seed=random_seed
+        predictions, sampling_column=SUBJECT_ID, n_samples=samples_per_subject, random_seed=resampling_seed
     )
     true_values_resampled = resampled_predictions[BOOLEAN_VALUE_COLUMN]
     predicted_values_resampled = resampled_predictions[PREDICTED_BOOLEAN_VALUE_COLUMN]
