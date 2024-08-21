@@ -29,7 +29,9 @@ def main(cfg: DictConfig) -> None:
 
     # Run the evaluation
     logger.info("Running evaluation...")
-    result = evaluate_binary_classification(predictions)
+    result = evaluate_binary_classification(
+        predictions, samples_per_subject=cfg.samples_per_subject, resampling_seed=cfg.resampling_seed
+    )
 
     # Save the results
     with open(evaluation_output_dir / "results.json", "w") as f:
