@@ -3,8 +3,8 @@ defaults:
   - override hydra/hydra_logging: disabled
   - override hydra/job_logging: disabled
 
-predictions_path: ../../sample_predictions/0.parquet
-output_dir: ../../sample_output
+predictions_path: ???
+output_dir: ???
 
 hydra:
   output_subdir: null
