@@ -18,7 +18,14 @@ import polars as pl
 import pyarrow as pa
 from numpy.typing import ArrayLike
 from sklearn.calibration import calibration_curve
-from sklearn.metrics import accuracy_score, f1_score, precision_recall_curve, roc_auc_score, roc_curve
+from sklearn.metrics import (
+    accuracy_score,
+    average_precision_score,
+    f1_score,
+    precision_recall_curve,
+    roc_auc_score,
+    roc_curve,
+)
 
 SUBJECT_ID = "subject_id"
 
@@ -212,6 +219,7 @@ def _get_binary_classification_metrics(
         "binary_accuracy": accuracy_score(true_values, predicted_values),
         "f1_score": f1_score(true_values, predicted_values),
         "roc_auc_score": roc_auc_score(true_values, predicted_probabilities),
+        "average_precision_score": average_precision_score(true_values, predicted_probabilities),
     }
 
     r = roc_curve(true_values, predicted_probabilities)
