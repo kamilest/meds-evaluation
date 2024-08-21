@@ -74,7 +74,7 @@ def evaluate_binary_classification(
     return results
 
 
-def _resample(predictions: pl.DataFrame, sampling_column=SUBJECT_ID, n_samples=1) -> pl.DataFrame:
+def _resample(predictions: pl.DataFrame, sampling_column=SUBJECT_ID, n_samples=1, random_seed=0) -> pl.DataFrame:
     """Samples (with replacement) the dataframe to represent each unique value in the sampling column equally.
 
     Args:
@@ -119,7 +119,7 @@ def _resample(predictions: pl.DataFrame, sampling_column=SUBJECT_ID, n_samples=1
     │ 3          │
     └────────────┘
     """
-
+    np.random.seed(random_seed)
     if sampling_column not in predictions.columns:
         raise ValueError(f'The model prediction dataframe does not contain the "{sampling_column}" column.')
 
