@@ -31,7 +31,7 @@ PREDICTED_BOOLEAN_PROBABILITY_COLUMN = "predicted_boolean_probability"
 
 
 def evaluate_binary_classification(
-    predictions: pl.DataFrame, samples_per_subject=4
+    predictions: pl.DataFrame, samples_per_subject=4, random_seed=0
 ) -> dict[str, dict[str, float | list[ArrayLike]]]:
     """Evaluates a set of model predictions for binary classification tasks.
 
@@ -40,6 +40,7 @@ def evaluate_binary_classification(
         "predicted_value" and "predicted_probability".
         samples_per_subject: the number of samples to take for each unique subject_id in the dataframe for
         per-subject metrics.
+        random_seed: random seed for resampling the dataframe.
         # TODO consider adding a parameter for the metric set to evaluate
 
     Returns:
@@ -56,7 +57,9 @@ def evaluate_binary_classification(
     predicted_values = predictions[PREDICTED_BOOLEAN_VALUE_COLUMN]
     predicted_probabilities = predictions[PREDICTED_BOOLEAN_PROBABILITY_COLUMN]
 
-    resampled_predictions = _resample(predictions, sampling_column=SUBJECT_ID, n_samples=samples_per_subject)
+    resampled_predictions = _resample(
+        predictions, sampling_column=SUBJECT_ID, n_samples=samples_per_subject, random_seed=random_seed
+    )
     true_values_resampled = resampled_predictions[BOOLEAN_VALUE_COLUMN]
     predicted_values_resampled = resampled_predictions[PREDICTED_BOOLEAN_VALUE_COLUMN]
     predicted_probabilities_resampled = resampled_predictions[PREDICTED_BOOLEAN_PROBABILITY_COLUMN]
@@ -74,7 +77,9 @@ def evaluate_binary_classification(
     return results
 
 
-def _resample(predictions: pl.DataFrame, sampling_column=SUBJECT_ID, n_samples=1, random_seed=0) -> pl.DataFrame:
+def _resample(
+    predictions: pl.DataFrame, sampling_column=SUBJECT_ID, n_samples=1, random_seed=0
+) -> pl.DataFrame:
     """Samples (with replacement) the dataframe to represent each unique value in the sampling column equally.
 
     Args:
@@ -119,13 +124,13 @@ def _resample(predictions: pl.DataFrame, sampling_column=SUBJECT_ID, n_samples=1
     │ 3          │
     └────────────┘
     """
-    np.random.seed(random_seed)
     if sampling_column not in predictions.columns:
         raise ValueError(f'The model prediction dataframe does not contain the "{sampling_column}" column.')
 
     sampling_column = predictions[sampling_column].to_numpy()
 
     # Split the indices of the dataframe by the unique values in the sampling column
+    np.random.seed(random_seed)
     splits = np.split(np.arange(len(sampling_column)), np.unique(sampling_column, return_index=True)[1][1:])
     resampled_ids = np.concatenate(
         [np.random.choice(split, n_samples, replace=True) for split in splits]
