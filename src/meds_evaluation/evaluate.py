@@ -15,7 +15,6 @@ TODO fairness functionality and filtering populations based on complex user-defi
 
 import numpy as np
 import polars as pl
-import pyarrow as pa
 from numpy.typing import ArrayLike
 from sklearn.calibration import calibration_curve
 from sklearn.metrics import (
@@ -27,11 +26,13 @@ from sklearn.metrics import (
     roc_curve,
 )
 
-SUBJECT_ID = "subject_id"
-
-BOOLEAN_VALUE_COLUMN = "boolean_value"
-PREDICTED_BOOLEAN_VALUE_COLUMN = "predicted_boolean_value"
-PREDICTED_BOOLEAN_PROBABILITY_COLUMN = "predicted_boolean_probability"
+from meds_evaluation.schema import (
+    BOOLEAN_VALUE_FIELD,
+    PREDICTED_BOOLEAN_PROBABILITY_FIELD,
+    PREDICTED_BOOLEAN_VALUE_FIELD,
+    SUBJECT_ID_FIELD,
+    validate_binary_classification_schema,
+)
 
 # TODO: input processing for different types of tasks
 #   detect which set of metrics to obtain based on the task and the contents of the model prediction dataframe
@@ -58,18 +59,21 @@ def evaluate_binary_classification(
         ValueError: if the predictions dataframe does not contain the necessary columns.
     """
     # Verify the dataframe schema to contain required fields for the binary classification metrics
-    _check_binary_classification_schema(predictions)
+    validate_binary_classification_schema(predictions)
 
-    true_values = predictions[BOOLEAN_VALUE_COLUMN]
-    predicted_values = predictions[PREDICTED_BOOLEAN_VALUE_COLUMN]
-    predicted_probabilities = predictions[PREDICTED_BOOLEAN_PROBABILITY_COLUMN]
+    true_values = predictions[BOOLEAN_VALUE_FIELD.name]
+    predicted_values = predictions[PREDICTED_BOOLEAN_VALUE_FIELD.name]
+    predicted_probabilities = predictions[PREDICTED_BOOLEAN_PROBABILITY_FIELD.name]
 
     resampled_predictions = _resample(
-        predictions, sampling_column=SUBJECT_ID, n_samples=samples_per_subject, random_seed=resampling_seed
+        predictions,
+        sampling_column=SUBJECT_ID_FIELD.name,
+        n_samples=samples_per_subject,
+        random_seed=resampling_seed,
     )
-    true_values_resampled = resampled_predictions[BOOLEAN_VALUE_COLUMN]
-    predicted_values_resampled = resampled_predictions[PREDICTED_BOOLEAN_VALUE_COLUMN]
-    predicted_probabilities_resampled = resampled_predictions[PREDICTED_BOOLEAN_PROBABILITY_COLUMN]
+    true_values_resampled = resampled_predictions[BOOLEAN_VALUE_FIELD.name]
+    predicted_values_resampled = resampled_predictions[PREDICTED_BOOLEAN_VALUE_FIELD.name]
+    predicted_probabilities_resampled = resampled_predictions[PREDICTED_BOOLEAN_PROBABILITY_FIELD.name]
 
     results = {
         "samples_equally_weighted": _get_binary_classification_metrics(
@@ -85,7 +89,7 @@ def evaluate_binary_classification(
 
 
 def _resample(
-    predictions: pl.DataFrame, sampling_column=SUBJECT_ID, n_samples=1, random_seed=0
+    predictions: pl.DataFrame, sampling_column=SUBJECT_ID_FIELD.name, n_samples=1, random_seed=0
 ) -> pl.DataFrame:
     """Samples (with replacement) the dataframe to represent each unique value in the sampling column equally.
 
@@ -172,35 +176,6 @@ def _resample(
     ).tolist()
 
     return predictions_sorted[resampled_ids]
-
-
-def _check_binary_classification_schema(predictions: pl.DataFrame) -> None:
-    """Checks if the predictions dataframe contains the necessary columns for binary classification metrics.
-
-    Args:
-        predictions: a DataFrame following the MEDS label schema and additional columns for
-        "predicted_boolean_value" and "predicted_boolean_probability".
-
-    Raises:
-        ValueError: if the predictions dataframe does not contain the necessary columns.
-    """
-    # TODO import and extend MEDS label schema
-    BINARY_CLASSIFICATION_SCHEMA = pa.schema(
-        [
-            (SUBJECT_ID, pa.int64()),
-            ("prediction_time", pa.timestamp("us")),
-            (BOOLEAN_VALUE_COLUMN, pa.bool_()),
-            (PREDICTED_BOOLEAN_VALUE_COLUMN, pa.bool_()),
-            (PREDICTED_BOOLEAN_PROBABILITY_COLUMN, pa.float64()),
-        ]
-    )
-
-    if not predictions.to_arrow().schema.equals(BINARY_CLASSIFICATION_SCHEMA):
-        raise ValueError(
-            "The prediction dataframe does not follow the MEDS binary classification schema.\n"
-            f"Expected schema:\n{str(BINARY_CLASSIFICATION_SCHEMA)}\n"
-            f"Received:\n{str(predictions.to_arrow().schema)}"
-        )
 
 
 def _get_binary_classification_metrics(
