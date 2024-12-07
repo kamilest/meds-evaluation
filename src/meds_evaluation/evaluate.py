@@ -118,11 +118,11 @@ def _get_binary_classification_metrics(
     """
     results = {}
 
-    if predicted_values:
+    if predicted_values is not None:
         results["binary_accuracy"] = accuracy_score(true_values, predicted_values)
         results["f1_score"] = f1_score(true_values, predicted_values)
 
-    if predicted_probabilities:
+    if predicted_probabilities is not None:
         results["roc_auc_score"] = roc_auc_score(true_values, predicted_probabilities)
         results["average_precision_score"] = average_precision_score(true_values, predicted_probabilities)
 

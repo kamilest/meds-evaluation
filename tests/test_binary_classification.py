@@ -5,11 +5,12 @@ from pathlib import Path
 from omegaconf import DictConfig
 
 from meds_evaluation.__main__ import main as binary_classification_main
+from tests import TEST_OUTPUT_DIR, TEST_PREDICITONS_PATH
 
 SAMPLE_CONFIG = DictConfig(
     {
-        "predictions_path": "./sample_predictions/0.parquet",
-        "output_dir": "./sample_output",
+        "predictions_path": TEST_PREDICITONS_PATH,
+        "output_dir": TEST_OUTPUT_DIR,
         "samples_per_subject": 4,
         "resampling_seed": 0,
     }
@@ -46,3 +47,8 @@ def test_main_binary_classification():
         actual_output = json.load(f)
 
     assert actual_output == EXPECTED_OUTPUT
+
+
+# TODO add tests for schema validation
+
+# TODO add tests for partial metrics for optional columns
