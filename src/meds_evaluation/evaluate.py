@@ -62,6 +62,7 @@ def evaluate_binary_classification(
     validate_binary_classification_schema(predictions)
 
     true_values = predictions[BOOLEAN_VALUE_FIELD.name]
+
     predicted_values = predictions[PREDICTED_BOOLEAN_VALUE_FIELD.name]
     predicted_probabilities = predictions[PREDICTED_BOOLEAN_PROBABILITY_FIELD.name]
 
@@ -71,9 +72,18 @@ def evaluate_binary_classification(
         n_samples=samples_per_subject,
         random_seed=resampling_seed,
     )
+
     true_values_resampled = resampled_predictions[BOOLEAN_VALUE_FIELD.name]
     predicted_values_resampled = resampled_predictions[PREDICTED_BOOLEAN_VALUE_FIELD.name]
     predicted_probabilities_resampled = resampled_predictions[PREDICTED_BOOLEAN_PROBABILITY_FIELD.name]
+
+    if predicted_values.is_null().all():
+        predicted_values = None
+        predicted_values_resampled = None
+
+    if predicted_probabilities.is_null().all():
+        predicted_probabilities = None
+        predicted_probabilities_resampled = None
 
     results = {
         "samples_equally_weighted": _get_binary_classification_metrics(
@@ -180,8 +190,8 @@ def _resample(
 
 def _get_binary_classification_metrics(
     true_values: ArrayLike,
-    predicted_values: ArrayLike,
-    predicted_probabilities: ArrayLike,
+    predicted_values: ArrayLike | None,
+    predicted_probabilities: ArrayLike | None,
 ) -> dict[str, float | list[ArrayLike]]:
     """Calculates a set of binary classification metrics based on the true and predicted values.
 
@@ -195,22 +205,24 @@ def _get_binary_classification_metrics(
         A dictionary mapping the metric names to their values.
         The visual (curve-based) metrics will return the raw values needed to create the plot.
     """
+    results = {}
 
-    results = {
-        "binary_accuracy": accuracy_score(true_values, predicted_values),
-        "f1_score": f1_score(true_values, predicted_values),
-        "roc_auc_score": roc_auc_score(true_values, predicted_probabilities),
-        "average_precision_score": average_precision_score(true_values, predicted_probabilities),
-    }
+    if predicted_values:
+        results["binary_accuracy"] = accuracy_score(true_values, predicted_values)
+        results["f1_score"] = f1_score(true_values, predicted_values)
 
-    r = roc_curve(true_values, predicted_probabilities)
-    results["roc_curve"] = r[0].tolist(), r[1].tolist()
+    if predicted_probabilities:
+        results["roc_auc_score"] = roc_auc_score(true_values, predicted_probabilities)
+        results["average_precision_score"] = average_precision_score(true_values, predicted_probabilities)
 
-    p = precision_recall_curve(true_values, predicted_probabilities)
-    results["precision_recall_curve"] = p[0].tolist(), p[1].tolist()
+        r = roc_curve(true_values, predicted_probabilities)
+        results["roc_curve"] = r[0].tolist(), r[1].tolist()
 
-    c = calibration_curve(true_values, predicted_probabilities, n_bins=10)
-    results["calibration_curve"] = c[0].tolist(), c[1].tolist()
-    results["calibration_error"] = np.abs(c[0] - c[1]).mean().item()
+        p = precision_recall_curve(true_values, predicted_probabilities)
+        results["precision_recall_curve"] = p[0].tolist(), p[1].tolist()
+
+        c = calibration_curve(true_values, predicted_probabilities, n_bins=10)
+        results["calibration_curve"] = c[0].tolist(), c[1].tolist()
+        results["calibration_error"] = np.abs(c[0] - c[1]).mean().item()
 
     return results
