@@ -43,6 +43,3 @@ Schema(
 Note that while `predicted_boolean_value` and `predicted_boolean_probability` are optional, at least one of
 them must be present and contain non-null values in order to generate the results. In addition, a schema can
 contain additional fields but at the moment these will not be used in MEDS Evaluation.
-
-When predicting the `boolean_value` label, are allowed to use all data about a subject up to and including the
-`prediction_time`.
