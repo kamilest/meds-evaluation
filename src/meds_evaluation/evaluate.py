@@ -15,7 +15,6 @@ TODO fairness functionality and filtering populations based on complex user-defi
 
 import numpy as np
 import polars as pl
-import pyarrow as pa
 from numpy.typing import ArrayLike
 from sklearn.calibration import calibration_curve
 from sklearn.metrics import (
@@ -27,11 +26,14 @@ from sklearn.metrics import (
     roc_curve,
 )
 
-SUBJECT_ID = "subject_id"
-
-BOOLEAN_VALUE_COLUMN = "boolean_value"
-PREDICTED_BOOLEAN_VALUE_COLUMN = "predicted_boolean_value"
-PREDICTED_BOOLEAN_PROBABILITY_COLUMN = "predicted_boolean_probability"
+from meds_evaluation.schema import (
+    BOOLEAN_VALUE_FIELD,
+    PREDICTED_BOOLEAN_PROBABILITY_FIELD,
+    PREDICTED_BOOLEAN_VALUE_FIELD,
+    SUBJECT_ID_FIELD,
+    validate_binary_classification_schema,
+)
+from meds_evaluation.utils import _resample
 
 # TODO: input processing for different types of tasks
 #   detect which set of metrics to obtain based on the task and the contents of the model prediction dataframe
@@ -58,18 +60,31 @@ def evaluate_binary_classification(
         ValueError: if the predictions dataframe does not contain the necessary columns.
     """
     # Verify the dataframe schema to contain required fields for the binary classification metrics
-    _check_binary_classification_schema(predictions)
+    validate_binary_classification_schema(predictions)
 
-    true_values = predictions[BOOLEAN_VALUE_COLUMN]
-    predicted_values = predictions[PREDICTED_BOOLEAN_VALUE_COLUMN]
-    predicted_probabilities = predictions[PREDICTED_BOOLEAN_PROBABILITY_COLUMN]
+    true_values = predictions[BOOLEAN_VALUE_FIELD]
+
+    predicted_values = predictions[PREDICTED_BOOLEAN_VALUE_FIELD]
+    predicted_probabilities = predictions[PREDICTED_BOOLEAN_PROBABILITY_FIELD]
 
     resampled_predictions = _resample(
-        predictions, sampling_column=SUBJECT_ID, n_samples=samples_per_subject, random_seed=resampling_seed
+        predictions,
+        sampling_column=SUBJECT_ID_FIELD,
+        n_samples=samples_per_subject,
+        random_seed=resampling_seed,
     )
-    true_values_resampled = resampled_predictions[BOOLEAN_VALUE_COLUMN]
-    predicted_values_resampled = resampled_predictions[PREDICTED_BOOLEAN_VALUE_COLUMN]
-    predicted_probabilities_resampled = resampled_predictions[PREDICTED_BOOLEAN_PROBABILITY_COLUMN]
+
+    true_values_resampled = resampled_predictions[BOOLEAN_VALUE_FIELD]
+    predicted_values_resampled = resampled_predictions[PREDICTED_BOOLEAN_VALUE_FIELD]
+    predicted_probabilities_resampled = resampled_predictions[PREDICTED_BOOLEAN_PROBABILITY_FIELD]
+
+    if predicted_values.is_null().all():
+        predicted_values = None
+        predicted_values_resampled = None
+
+    if predicted_probabilities.is_null().all():
+        predicted_probabilities = None
+        predicted_probabilities_resampled = None
 
     results = {
         "samples_equally_weighted": _get_binary_classification_metrics(
@@ -84,129 +99,10 @@ def evaluate_binary_classification(
     return results
 
 
-def _resample(
-    predictions: pl.DataFrame, sampling_column=SUBJECT_ID, n_samples=1, random_seed=0
-) -> pl.DataFrame:
-    """Samples (with replacement) the dataframe to represent each unique value in the sampling column equally.
-
-    Args:
-        predictions: a dataframe following the MEDS label schema
-        sampling_column: the dataframe column according to which to resample
-        n_samples: the number of samples to take for each unique value in the sample_by column
-
-    Returns:
-        A resampled dataframe with n_samples for each unique value in the sample_by column.
-
-    Raises:
-        ValueError: if the sampling column is not present in the predictions dataframe
-
-    Examples:
-    >>> _resample(pl.DataFrame({"a": [1, 2, 3, 4, 5, 6]}))
-    Traceback (most recent call last):
-    ...
-    ValueError: The model prediction dataframe does not contain the "subject_id" column.
-    >>> _resample(pl.DataFrame({"subject_id": [1, 2, 2, 3, 3, 3]}))
-    shape: (3, 1)
-    ┌────────────┐
-    │ subject_id │
-    │ ---        │
-    │ i64        │
-    ╞════════════╡
-    │ 1          │
-    │ 2          │
-    │ 3          │
-    └────────────┘
-    >>> _resample(pl.DataFrame({"subject_id": [1, 2, 2, 3, 3, 3]}), n_samples=2)
-    shape: (6, 1)
-    ┌────────────┐
-    │ subject_id │
-    │ ---        │
-    │ i64        │
-    ╞════════════╡
-    │ 1          │
-    │ 1          │
-    │ 2          │
-    │ 2          │
-    │ 3          │
-    │ 3          │
-    └────────────┘
-    >>> _resample(pl.DataFrame({"subject_id": [1, 3, 4, 2, 2, 3, 3, 3, 1]}), n_samples=1)
-    shape: (4, 1)
-    ┌────────────┐
-    │ subject_id │
-    │ ---        │
-    │ i64        │
-    ╞════════════╡
-    │ 1          │
-    │ 2          │
-    │ 3          │
-    │ 4          │
-    └────────────┘
-    >>> _resample(pl.DataFrame({"a": [1, 3, 4, 2, 2, 3, 3, 3, 1]}), sampling_column="a", n_samples=1)
-    shape: (4, 1)
-    ┌─────┐
-    │ a   │
-    │ --- │
-    │ i64 │
-    ╞═════╡
-    │ 1   │
-    │ 2   │
-    │ 3   │
-    │ 4   │
-    └─────┘
-    """
-
-    # TODO resampling empty dataframe should throw an error
-
-    if sampling_column not in predictions.columns:
-        raise ValueError(f'The model prediction dataframe does not contain the "{sampling_column}" column.')
-
-    predictions_sorted = predictions.sort(sampling_column)
-    sampling_column = predictions_sorted[sampling_column].to_numpy()
-
-    # Split the indices of the dataframe by the unique values in the sampling column
-    np.random.seed(random_seed)
-    splits = np.split(np.arange(len(sampling_column)), np.unique(sampling_column, return_index=True)[1][1:])
-    resampled_ids = np.concatenate(
-        [np.random.choice(split, n_samples, replace=True) for split in splits]
-    ).tolist()
-
-    return predictions_sorted[resampled_ids]
-
-
-def _check_binary_classification_schema(predictions: pl.DataFrame) -> None:
-    """Checks if the predictions dataframe contains the necessary columns for binary classification metrics.
-
-    Args:
-        predictions: a DataFrame following the MEDS label schema and additional columns for
-        "predicted_boolean_value" and "predicted_boolean_probability".
-
-    Raises:
-        ValueError: if the predictions dataframe does not contain the necessary columns.
-    """
-    # TODO import and extend MEDS label schema
-    BINARY_CLASSIFICATION_SCHEMA = pa.schema(
-        [
-            (SUBJECT_ID, pa.int64()),
-            ("prediction_time", pa.timestamp("us")),
-            (BOOLEAN_VALUE_COLUMN, pa.bool_()),
-            (PREDICTED_BOOLEAN_VALUE_COLUMN, pa.bool_()),
-            (PREDICTED_BOOLEAN_PROBABILITY_COLUMN, pa.float64()),
-        ]
-    )
-
-    if not predictions.to_arrow().schema.equals(BINARY_CLASSIFICATION_SCHEMA):
-        raise ValueError(
-            "The prediction dataframe does not follow the MEDS binary classification schema.\n"
-            f"Expected schema:\n{str(BINARY_CLASSIFICATION_SCHEMA)}\n"
-            f"Received:\n{str(predictions.to_arrow().schema)}"
-        )
-
-
 def _get_binary_classification_metrics(
     true_values: ArrayLike,
-    predicted_values: ArrayLike,
-    predicted_probabilities: ArrayLike,
+    predicted_values: ArrayLike | None,
+    predicted_probabilities: ArrayLike | None,
 ) -> dict[str, float | list[ArrayLike]]:
     """Calculates a set of binary classification metrics based on the true and predicted values.
 
@@ -220,22 +116,26 @@ def _get_binary_classification_metrics(
         A dictionary mapping the metric names to their values.
         The visual (curve-based) metrics will return the raw values needed to create the plot.
     """
+    results = {}
 
-    results = {
-        "binary_accuracy": accuracy_score(true_values, predicted_values),
-        "f1_score": f1_score(true_values, predicted_values),
-        "roc_auc_score": roc_auc_score(true_values, predicted_probabilities),
-        "average_precision_score": average_precision_score(true_values, predicted_probabilities),
-    }
+    if predicted_values is not None:
+        results["binary_accuracy"] = accuracy_score(true_values, predicted_values)
+        results["f1_score"] = f1_score(true_values, predicted_values).item()
 
-    r = roc_curve(true_values, predicted_probabilities)
-    results["roc_curve"] = r[0].tolist(), r[1].tolist()
+    if predicted_probabilities is not None:
+        results["roc_auc_score"] = roc_auc_score(true_values, predicted_probabilities).item()
+        results["average_precision_score"] = average_precision_score(
+            true_values, predicted_probabilities
+        ).item()
 
-    p = precision_recall_curve(true_values, predicted_probabilities)
-    results["precision_recall_curve"] = p[0].tolist(), p[1].tolist()
+        r = roc_curve(true_values, predicted_probabilities)
+        results["roc_curve"] = [r[0].tolist(), r[1].tolist()]
 
-    c = calibration_curve(true_values, predicted_probabilities, n_bins=10)
-    results["calibration_curve"] = c[0].tolist(), c[1].tolist()
-    results["calibration_error"] = np.abs(c[0] - c[1]).mean().item()
+        p = precision_recall_curve(true_values, predicted_probabilities)
+        results["precision_recall_curve"] = [p[0].tolist(), p[1].tolist()]
+
+        c = calibration_curve(true_values, predicted_probabilities, n_bins=10)
+        results["calibration_curve"] = [c[0].tolist(), c[1].tolist()]
+        results["calibration_error"] = np.abs(c[0] - c[1]).mean().item()
 
     return results
