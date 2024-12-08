@@ -44,16 +44,24 @@ def validate_binary_classification_schema(df: pl.DataFrame) -> None:
         raise ValueError(f"Missing required fields: {missing_required_fields}")
     else:
         for required_field in REQUIRED_FIELDS:
-            assert df_type_dict[required_field] == BINARY_CLASSIFICATION_SCHEMA_DICT[required_field]
+            if df_type_dict[required_field] != BINARY_CLASSIFICATION_SCHEMA_DICT[required_field]:
+                raise ValueError(
+                    f"Mismatched type for {required_field}: expected {df_type_dict[required_field]}, "
+                    f"got {BINARY_CLASSIFICATION_SCHEMA_DICT[required_field]}"
+                )
 
     # Check at least one of the prediction fields is present
     prediction_fields = PREDICTION_FIELDS & df_fields
     if not prediction_fields:
-        raise ValueError(f"Missing at least one of the prediction fields: {PREDICTION_FIELDS}")
+        raise ValueError(f"Missing all prediction fields: {PREDICTION_FIELDS}")
     elif all(df[field].is_null().all() for field in prediction_fields):
         raise ValueError(
             f"At least one of the prediction fields should have non-null values: {PREDICTION_FIELDS}"
         )
     else:
         for prediction_field in prediction_fields:
-            assert df_type_dict[prediction_field] == BINARY_CLASSIFICATION_SCHEMA_DICT[prediction_field]
+            if df_type_dict[prediction_field] != BINARY_CLASSIFICATION_SCHEMA_DICT[prediction_field]:
+                raise ValueError(
+                    f"Mismatched type for {prediction_field}: expected {df_type_dict[prediction_field]}, "
+                    f"got {BINARY_CLASSIFICATION_SCHEMA_DICT[prediction_field]}"
+                )
