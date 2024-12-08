@@ -62,21 +62,21 @@ def evaluate_binary_classification(
     # Verify the dataframe schema to contain required fields for the binary classification metrics
     validate_binary_classification_schema(predictions)
 
-    true_values = predictions[BOOLEAN_VALUE_FIELD.name]
+    true_values = predictions[BOOLEAN_VALUE_FIELD]
 
-    predicted_values = predictions[PREDICTED_BOOLEAN_VALUE_FIELD.name]
-    predicted_probabilities = predictions[PREDICTED_BOOLEAN_PROBABILITY_FIELD.name]
+    predicted_values = predictions[PREDICTED_BOOLEAN_VALUE_FIELD]
+    predicted_probabilities = predictions[PREDICTED_BOOLEAN_PROBABILITY_FIELD]
 
     resampled_predictions = _resample(
         predictions,
-        sampling_column=SUBJECT_ID_FIELD.name,
+        sampling_column=SUBJECT_ID_FIELD,
         n_samples=samples_per_subject,
         random_seed=resampling_seed,
     )
 
-    true_values_resampled = resampled_predictions[BOOLEAN_VALUE_FIELD.name]
-    predicted_values_resampled = resampled_predictions[PREDICTED_BOOLEAN_VALUE_FIELD.name]
-    predicted_probabilities_resampled = resampled_predictions[PREDICTED_BOOLEAN_PROBABILITY_FIELD.name]
+    true_values_resampled = resampled_predictions[BOOLEAN_VALUE_FIELD]
+    predicted_values_resampled = resampled_predictions[PREDICTED_BOOLEAN_VALUE_FIELD]
+    predicted_probabilities_resampled = resampled_predictions[PREDICTED_BOOLEAN_PROBABILITY_FIELD]
 
     if predicted_values.is_null().all():
         predicted_values = None

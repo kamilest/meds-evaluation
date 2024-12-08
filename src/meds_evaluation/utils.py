@@ -5,7 +5,7 @@ from meds_evaluation.schema import SUBJECT_ID_FIELD
 
 
 def _resample(
-    predictions: pl.DataFrame, sampling_column=SUBJECT_ID_FIELD.name, n_samples=1, random_seed=0
+    predictions: pl.DataFrame, sampling_column=SUBJECT_ID_FIELD, n_samples=1, random_seed=0
 ) -> pl.DataFrame:
     """Samples (with replacement) the dataframe to represent each unique value in the sampling column equally.
 

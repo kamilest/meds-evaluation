@@ -9,11 +9,8 @@ from omegaconf import DictConfig
 
 from meds_evaluation.__main__ import main as binary_classification_main
 from meds_evaluation.evaluate import evaluate_binary_classification
+from meds_evaluation.schema import BINARY_CLASSIFICATION_SCHEMA_DICT
 from tests import BINARY_CLASSIFICATION_SMALL_PATH, TEST_OUTPUT_DIR
-
-# TODO unify schemas
-# from meds_evaluation.schema import BINARY_CLASSIFICATION_SCHEMA_TYPE_DICT
-
 
 SAMPLE_CONFIG = DictConfig(
     {
@@ -24,13 +21,6 @@ SAMPLE_CONFIG = DictConfig(
     }
 )
 
-BINARY_CLASSIFICATION_SMALL_TYPE_DICT = {
-    "subject_id": pl.Int64,
-    "prediction_time": pl.Datetime,
-    "boolean_value": pl.Boolean,
-    "predicted_boolean_value": pl.Boolean,
-    "predicted_boolean_probability": pl.Float64,
-}
 
 BINARY_CLASSIFICATION_SMALL = pl.DataFrame(
     {
@@ -44,7 +34,7 @@ BINARY_CLASSIFICATION_SMALL = pl.DataFrame(
         "predicted_boolean_value": [True, False, False],
         "predicted_boolean_probability": [0.9, 0.1, 0.2],
     },
-    schema=BINARY_CLASSIFICATION_SMALL_TYPE_DICT,
+    schema=BINARY_CLASSIFICATION_SCHEMA_DICT,
 )
 
 EXPECTED_OUTPUT_SMALL = {
@@ -102,7 +92,7 @@ def test_evaluate_binary_classification_small_null_values():
             "predicted_boolean_value": [None, None, None],
             "predicted_boolean_probability": [0.9, 0.1, 0.2],
         },
-        schema=BINARY_CLASSIFICATION_SMALL_TYPE_DICT,
+        schema=BINARY_CLASSIFICATION_SCHEMA_DICT,
     )
 
     expected_output = {
@@ -144,7 +134,7 @@ def test_evaluate_binary_classification_small_null_probabilities():
             "predicted_boolean_value": [True, False, False],
             "predicted_boolean_probability": [None, None, None],
         },
-        schema=BINARY_CLASSIFICATION_SMALL_TYPE_DICT,
+        schema=BINARY_CLASSIFICATION_SCHEMA_DICT,
     )
 
     expected_output = {
