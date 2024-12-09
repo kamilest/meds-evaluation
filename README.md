@@ -16,7 +16,16 @@ Please refer to the
 [MEDS-DEV tutorial](https://github.com/mmcdermott/MEDS-DEV?tab=readme-ov-file#example-workflow) to learn how
 to extract and prepare the data in the MEDS format and obtain model predictions ready to be evaluated.
 
-# Prediction schema
+## Installing MEDS-Evaluation
+
+To install `meds-evaluation` commands, run the following in your working directory:
+
+```bash
+git clone https://github.com/kamilest/meds-evaluation.git
+pip install -e ./meds-evaluation
+```
+
+## Prediction schema
 
 Inputs to MEDS Evaluation must follow the *prediction schema*, which has five mandatory fields:
 
@@ -41,16 +50,23 @@ predicted_labels = pa.schema(
         ("predicted_boolean_probability", pa.float64()),
     ]
 )
-
-PredictedLabel = TypedDict(
-    "Label",
-    {
-        "subject_id": int,
-        "prediction_time": datetime.datetime,
-        "boolean_value": bool,
-        "predicted_boolean_value": bool,
-        "predicted_boolean_probability": float,
-    },
-    total=False,
-)
 ```
+
+Note that while `predicted_boolean_value` and `predicted_boolean_probability` are optional, at least one of
+them must be present and contain non-null values in order to generate the results. In addition, a schema can
+contain additional fields but at the moment these will not be used in MEDS Evaluation.
+
+## Running a single evaluation
+
+Once the dataframe with model predictions for a particular dataset and task is ready, you can run:
+
+```bash
+meds-evaluation-cli \
+	predictions_path="path/to/predictions/*.parquet" \
+	output_dir="path/to/output/directory/"
+```
+
+This will create a JSON file with the results in the directory provided by the `output_dir` argument.
+
+Note this processes only one `.parquet` file with the results, so ground truth values and predictions at
+present need to be collected into a single file.
