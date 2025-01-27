@@ -31,10 +31,8 @@ dependencies = [
 [tool.setuptools_scm]
 
 [project.optional-dependencies]
-dev = ["pre-commit"]
-tests = ["pytest"] #, "pytest-cov", "rootutils"]
-#local_parallelism = ["hydra-joblib-launcher"]
-#slurm_parallelism = ["hydra-submitit-launcher"]
+dev = ["pre-commit<4"]
+tests = ["pytest", "pytest-cov"]
 
 [project.scripts]
 meds-evaluation-cli = "meds_evaluation.__main__:main"

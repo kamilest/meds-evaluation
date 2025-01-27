@@ -14,9 +14,10 @@ in accordance with the provided `pyarrow` schema, this package can be used to ev
 in a consistent, Health-AI focused manner.
 
 To use, simply:
-  1. Install: `pip install meds-evaluation`
-  2. Produce predictions that satisfy the [included schema](https://github.com/kamilest/meds-evaluation/blob/main/src/meds_evaluation/schema.py).
-  3. Run the `meds-evaluation-cli` tool: `meds-evaluation-cli predictions_path="$PREDICTIONS_FP_GLOB" output_dir="$OUTPUT_DIR"`
+
+1. Install: `pip install meds-evaluation`
+2. Produce predictions that satisfy the [included schema](https://github.com/kamilest/meds-evaluation/blob/main/src/meds_evaluation/schema.py).
+3. Run the `meds-evaluation-cli` tool: `meds-evaluation-cli predictions_path="$PREDICTIONS_FP_GLOB" output_dir="$OUTPUT_DIR"`
 
 A JSON file with the output evaluations will be produced in the given dir!
 
@@ -52,8 +53,7 @@ Note that while `predicted_boolean_value` and `predicted_boolean_probability` ar
 them must be present and contain non-null values in order to generate the results. In addition, a schema can
 contain additional fields but at the moment these will not be used in MEDS Evaluation.
 
-
-# MEDS Ecosystem 
+# MEDS Ecosystem
 
 MEDS Evaluation pipeline is intended to be used together with
 [MEDS-DEV](https://github.com/mmcdermott/MEDS-DEV/), but can also be adapted to use as a standalone package.
