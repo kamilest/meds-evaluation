@@ -120,13 +120,11 @@ def _get_binary_classification_metrics(
 
     if predicted_values is not None:
         results["binary_accuracy"] = accuracy_score(true_values, predicted_values)
-        results["f1_score"] = f1_score(true_values, predicted_values).item()
+        results["f1_score"] = f1_score(true_values, predicted_values)
 
     if predicted_probabilities is not None:
-        results["roc_auc_score"] = roc_auc_score(true_values, predicted_probabilities).item()
-        results["average_precision_score"] = average_precision_score(
-            true_values, predicted_probabilities
-        ).item()
+        results["roc_auc_score"] = roc_auc_score(true_values, predicted_probabilities)
+        results["average_precision_score"] = average_precision_score(true_values, predicted_probabilities)
 
         r = roc_curve(true_values, predicted_probabilities)
         results["roc_curve"] = [r[0].tolist(), r[1].tolist()]
@@ -136,6 +134,6 @@ def _get_binary_classification_metrics(
 
         c = calibration_curve(true_values, predicted_probabilities, n_bins=10)
         results["calibration_curve"] = [c[0].tolist(), c[1].tolist()]
-        results["calibration_error"] = np.abs(c[0] - c[1]).mean().item()
+        results["calibration_error"] = np.abs(c[0] - c[1]).mean()
 
     return results
