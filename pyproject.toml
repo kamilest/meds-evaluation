@@ -30,6 +30,13 @@ dependencies = [
 
 [tool.setuptools_scm]
 
+[tool.pytest.ini_options]
+addopts = [
+  "--color=yes",
+  "--doctest-modules",
+  "--ignore=docs",
+]
+
 [project.optional-dependencies]
 dev = ["pre-commit<4"]
 tests = ["pytest", "pytest-cov"]
