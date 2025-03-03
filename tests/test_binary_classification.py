@@ -44,9 +44,6 @@ EXPECTED_OUTPUT_SMALL = {
             "f1_score": 0.6666666666666666,
             "roc_auc_score": 1.0,
             "average_precision_score": 1.0,
-            "roc_curve": [[0.0, 0.0, 0.0, 1.0], [0.0, 0.5, 1.0, 1.0]],
-            "precision_recall_curve": [[0.6666666666666666, 1.0, 1.0, 1.0], [1.0, 1.0, 0.5, 0.0]],
-            "calibration_curve": [[0.0, 1.0, 1.0], [0.1, 0.2, 0.9]],
             "calibration_error": 0.3333333333333333,
         }
     ),
@@ -56,9 +53,6 @@ EXPECTED_OUTPUT_SMALL = {
             "f1_score": 0.6666666666666666,
             "roc_auc_score": 1.0,
             "average_precision_score": 1.0,
-            "roc_curve": [[0.0, 0.0, 0.0, 1.0], [0.0, 0.5, 1.0, 1.0]],
-            "precision_recall_curve": [[0.6666666666666666, 1.0, 1.0, 1.0], [1.0, 1.0, 0.5, 0.0]],
-            "calibration_curve": [[0.0, 1.0, 1.0], [0.1, 0.2, 0.9]],
             "calibration_error": 0.3333333333333333,
         }
     ),
@@ -100,9 +94,6 @@ def test_evaluate_binary_classification_small_null_values():
             {
                 "roc_auc_score": 1.0,
                 "average_precision_score": 1.0,
-                "roc_curve": [[0.0, 0.0, 0.0, 1.0], [0.0, 0.5, 1.0, 1.0]],
-                "precision_recall_curve": [[0.6666666666666666, 1.0, 1.0, 1.0], [1.0, 1.0, 0.5, 0.0]],
-                "calibration_curve": [[0.0, 1.0, 1.0], [0.1, 0.2, 0.9]],
                 "calibration_error": 0.3333333333333333,
             }
         ),
@@ -110,9 +101,6 @@ def test_evaluate_binary_classification_small_null_values():
             {
                 "roc_auc_score": 1.0,
                 "average_precision_score": 1.0,
-                "roc_curve": [[0.0, 0.0, 0.0, 1.0], [0.0, 0.5, 1.0, 1.0]],
-                "precision_recall_curve": [[0.6666666666666666, 1.0, 1.0, 1.0], [1.0, 1.0, 0.5, 0.0]],
-                "calibration_curve": [[0.0, 1.0, 1.0], [0.1, 0.2, 0.9]],
                 "calibration_error": 0.3333333333333333,
             }
         ),
