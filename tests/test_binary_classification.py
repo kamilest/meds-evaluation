@@ -10,12 +10,12 @@ from omegaconf import DictConfig
 from meds_evaluation.__main__ import main as binary_classification_main
 from meds_evaluation.evaluate import evaluate_binary_classification
 from meds_evaluation.schema import BINARY_CLASSIFICATION_SCHEMA_DICT
-from tests import BINARY_CLASSIFICATION_SMALL_PATH, TEST_OUTPUT_DIR
+from tests import BINARY_CLASSIFICATION_SMALL_PATH, TEST_OUTPUT_FILE
 
 SAMPLE_CONFIG = DictConfig(
     {
         "predictions_path": BINARY_CLASSIFICATION_SMALL_PATH,
-        "output_dir": TEST_OUTPUT_DIR,
+        "output_file": TEST_OUTPUT_FILE,
         "samples_per_subject": 4,
         "resampling_seed": 0,
     }
@@ -64,7 +64,7 @@ EXPECTED_OUTPUT_SMALL = {
 def test_main_binary_classification():
     binary_classification_main(SAMPLE_CONFIG)
     # TODO potentially use temporary files
-    with open(Path(SAMPLE_CONFIG.output_dir) / "results.json") as f:
+    with open(Path(SAMPLE_CONFIG.output_file)) as f:
         actual_output = json.load(f)
 
     assert actual_output == EXPECTED_OUTPUT_SMALL

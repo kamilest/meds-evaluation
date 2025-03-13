@@ -24,8 +24,8 @@ def main(cfg: DictConfig) -> None:
     predictions = pl.read_parquet(cfg.predictions_path)
 
     # Set output path
-    evaluation_output_dir = Path(cfg.output_dir)
-    evaluation_output_dir.mkdir(exist_ok=True, parents=True)
+    evaluation_output_file = Path(cfg.output_file)
+    evaluation_output_file.parent.mkdir(exist_ok=True, parents=True)
 
     # Run the evaluation
     logger.info("Running evaluation...")
@@ -34,13 +34,10 @@ def main(cfg: DictConfig) -> None:
     )
 
     # Save the results
-    with open(evaluation_output_dir / "results.json", "w") as f:
+    with open(evaluation_output_file, "w") as f:
         json.dump(result, f, indent=4)
 
-    logger.info(
-        f"Completed in {datetime.now() - st}. Results saved to '"
-        f"{evaluation_output_dir / 'results.json'}'."
-    )
+    logger.info(f"Completed in {datetime.now() - st}. Results saved to '" f"{evaluation_output_file}'.")
 
 
 if __name__ == "__main__":
