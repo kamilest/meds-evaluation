@@ -45,6 +45,7 @@ EXPECTED_OUTPUT_SMALL = {
             "roc_auc_score": 1.0,
             "average_precision_score": 1.0,
             "calibration_error": 0.3333333333333333,
+            "brier_score": 0.22000000000000006,
         }
     ),
     "subjects_equally_weighted": pytest.approx(
@@ -54,6 +55,7 @@ EXPECTED_OUTPUT_SMALL = {
             "roc_auc_score": 1.0,
             "average_precision_score": 1.0,
             "calibration_error": 0.3333333333333333,
+            "brier_score": 0.22000000000000006,
         }
     ),
 }
@@ -95,6 +97,7 @@ def test_evaluate_binary_classification_small_null_values():
                 "roc_auc_score": 1.0,
                 "average_precision_score": 1.0,
                 "calibration_error": 0.3333333333333333,
+                "brier_score": 0.22000000000000006,
             }
         ),
         "subjects_equally_weighted": pytest.approx(
@@ -102,6 +105,7 @@ def test_evaluate_binary_classification_small_null_values():
                 "roc_auc_score": 1.0,
                 "average_precision_score": 1.0,
                 "calibration_error": 0.3333333333333333,
+                "brier_score": 0.22000000000000006,
             }
         ),
     }
