@@ -10,7 +10,7 @@ from loguru import logger
 from omegaconf import DictConfig, OmegaConf
 
 from meds_evaluation.evaluate import (
-    evaluate_binary_classification, 
+    evaluate_binary_classification,
     evaluate_bootstrapped_binary_classification,
 )
 
@@ -47,7 +47,7 @@ def main(cfg: DictConfig) -> None:
 
     logger.info("Running evaluation...")
     result = evaluate_bootstrapped_binary_classification(
-        predictions, 
+        predictions,
         samples_per_subject=cfg.samples_per_subject,
     )
 

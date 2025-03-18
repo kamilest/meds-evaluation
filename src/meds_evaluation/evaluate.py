@@ -32,8 +32,8 @@ from meds_evaluation.utils import _resample
 #   detect which set of metrics to obtain based on the task and the contents of the model prediction dataframe
 
 def evaluate_bootstrapped_binary_classification(
-    predictions: pl.DataFrame, 
-    samples_per_subject=4, 
+    predictions: pl.DataFrame,
+    samples_per_subject=4,
     bootstrapping=100,
 ) -> dict[str, dict[str, float | list[ArrayLike]]]:
     """Evaluates a set of model predictions for binary classification tasks with bootstrap confidence.
