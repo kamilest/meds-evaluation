@@ -9,7 +9,10 @@ import polars as pl
 from loguru import logger
 from omegaconf import DictConfig, OmegaConf
 
-from meds_evaluation.evaluate import evaluate_binary_classification, evaluate_bootstrapped_binary_classification
+from meds_evaluation.evaluate import (
+    evaluate_binary_classification, 
+    evaluate_bootstrapped_binary_classification,
+)
 
 config_yaml = files("meds_evaluation").joinpath("configs/meds_evaluation.yaml")
 
@@ -44,7 +47,8 @@ def main(cfg: DictConfig) -> None:
 
     logger.info("Running evaluation...")
     result = evaluate_bootstrapped_binary_classification(
-        predictions, samples_per_subject=cfg.samples_per_subject,
+        predictions, 
+        samples_per_subject=cfg.samples_per_subject,
     )
 
     # Save the results

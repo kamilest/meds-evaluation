@@ -104,6 +104,7 @@ def test_main_bootstrapped_binary_classification():
 
     assert actual_output == EXPECTED_OUTPUT_BOOTSTRAPPED
 
+
 def test_main_binary_classification():
     binary_classification_main(SAMPLE_CONFIG)
     # TODO potentially use temporary files
