@@ -31,6 +31,7 @@ from meds_evaluation.utils import _resample
 # TODO: input processing for different types of tasks
 #   detect which set of metrics to obtain based on the task and the contents of the model prediction dataframe
 
+
 def evaluate_bootstrapped_binary_classification(
     predictions: pl.DataFrame,
     samples_per_subject=4,
