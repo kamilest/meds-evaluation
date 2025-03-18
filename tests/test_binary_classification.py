@@ -60,6 +60,49 @@ EXPECTED_OUTPUT_SMALL = {
     ),
 }
 
+EXPECTED_OUTPUT_BOOTSTRAPPED = {
+    "samples_equally_weighted": pytest.approx(
+        {
+            'mean_average_precision_score': 1.0,
+            'mean_binary_accuracy': 0.6666666666666669,
+            'mean_brier_score': 0.22,
+            'mean_calibration_error': 0.3333333333333334,
+            'mean_f1_score': 0.6666666666666669,
+            'mean_roc_auc_score': 1.0,
+            'std_average_precision_score': 0.0,
+            'std_binary_accuracy': 0.0,
+            'std_brier_score': 0.0,
+            'std_calibration_error': 0.0,
+            'std_f1_score': 0.0,
+            'std_roc_auc_score': 0.0,
+        }
+    ),
+    "subjects_equally_weighted": pytest.approx(
+        {
+            'mean_average_precision_score': 1.0,
+            'mean_binary_accuracy': 0.6666666666666669,
+            'mean_brier_score': 0.22,
+            'mean_calibration_error': 0.3333333333333334,
+            'mean_f1_score': 0.6666666666666669,
+            'mean_roc_auc_score': 1.0,
+            'std_average_precision_score': 0.0,
+            'std_binary_accuracy': 0.0,
+            'std_brier_score': 0.0,
+            'std_calibration_error': 0.0,
+            'std_f1_score': 0.0,
+            'std_roc_auc_score': 0.0,
+        }
+    ),
+}
+
+
+def test_main_bootstrapped_binary_classification():
+    binary_classification_main(SAMPLE_CONFIG)
+    # TODO potentially use temporary files
+    with open(Path(SAMPLE_CONFIG.output_dir) / "results_boot.json") as f:
+        actual_output = json.load(f)
+
+    assert actual_output == EXPECTED_OUTPUT_BOOTSTRAPPED
 
 def test_main_binary_classification():
     binary_classification_main(SAMPLE_CONFIG)

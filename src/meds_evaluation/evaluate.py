@@ -31,6 +31,42 @@ from meds_evaluation.utils import _resample
 # TODO: input processing for different types of tasks
 #   detect which set of metrics to obtain based on the task and the contents of the model prediction dataframe
 
+def evaluate_bootstrapped_binary_classification(
+    predictions: pl.DataFrame, samples_per_subject=4, bootstrapping=100,
+) -> dict[str, dict[str, float | list[ArrayLike]]]:
+    """Evaluates a set of model predictions for binary classification tasks with bootstrap confidence.
+
+    Args:
+        predictions: a DataFrame following the MEDS label schema and additional columns for
+        "predicted_value" and "predicted_probability".
+        samples_per_subject: the number of samples to take for each unique subject_id in the dataframe for
+        per-subject metrics.
+        bootstrapping: number of bootstrap samples to take for confidence intervals.
+        # TODO consider adding a parameter for the metric set to evaluate
+
+    Returns:
+        A dictionary mapping the metric names to their values.
+        The visual (curve-based) metrics will return the raw values needed to create the plot.
+
+    Raises:
+        ValueError: if the predictions dataframe does not contain the necessary columns.
+    """
+    assert bootstrapping > 0, "Bootstrapping must be a positive integer."
+
+    boot_res = {}
+    for bi in range(bootstrapping):
+        boot_res[bi] = evaluate_binary_classification(predictions, samples_per_subject, resampling_seed = bi)
+
+    # Summarize the results
+    results = {}
+    for sampling in boot_res[0].keys():
+        results[sampling] = {}
+        for metric in boot_res[0][sampling]:
+            metric_values = [boot_res[bi][sampling][metric] for bi in range(bootstrapping)]
+            results[sampling]["mean_" + metric] = np.mean(metric_values)
+            results[sampling]["std_" + metric] = np.std(metric_values)
+
+    return results
 
 def evaluate_binary_classification(
     predictions: pl.DataFrame, samples_per_subject=4, resampling_seed=0

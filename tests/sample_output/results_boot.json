@@ -1,0 +1,30 @@
+{
+    "samples_equally_weighted": {
+        "mean_binary_accuracy": 0.6666666666666669,
+        "std_binary_accuracy": 2.220446049250313e-16,
+        "mean_f1_score": 0.6666666666666669,
+        "std_f1_score": 2.220446049250313e-16,
+        "mean_roc_auc_score": 1.0,
+        "std_roc_auc_score": 0.0,
+        "mean_average_precision_score": 1.0,
+        "std_average_precision_score": 0.0,
+        "mean_calibration_error": 0.3333333333333334,
+        "std_calibration_error": 1.1102230246251565e-16,
+        "mean_brier_score": 0.22,
+        "std_brier_score": 5.551115123125783e-17
+    },
+    "subjects_equally_weighted": {
+        "mean_binary_accuracy": 0.6666666666666669,
+        "std_binary_accuracy": 2.220446049250313e-16,
+        "mean_f1_score": 0.6666666666666669,
+        "std_f1_score": 2.220446049250313e-16,
+        "mean_roc_auc_score": 1.0,
+        "std_roc_auc_score": 0.0,
+        "mean_average_precision_score": 1.0,
+        "std_average_precision_score": 0.0,
+        "mean_calibration_error": 0.3333333333333334,
+        "std_calibration_error": 1.1102230246251565e-16,
+        "mean_brier_score": 0.22,
+        "std_brier_score": 5.551115123125783e-17
+    }
+}
