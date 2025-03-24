@@ -1,18 +1,18 @@
 {
     "samples_equally_weighted": {
-        "binary_accuracy": 0.6666666666666666,
-        "f1_score": 0.6666666666666666,
-        "roc_auc_score": 1.0,
-        "average_precision_score": 1.0,
-        "calibration_error": 0.3333333333333333,
-        "brier_score": 0.22000000000000006
+        "binary_accuracy": 0.8,
+        "f1_score": 0.8,
+        "roc_auc_score": 0.8333333333333333,
+        "average_precision_score": 0.9166666666666665,
+        "calibration_error": 0.3,
+        "brier_score": 0.15800000000000003
     },
     "subjects_equally_weighted": {
-        "binary_accuracy": 0.6666666666666666,
-        "f1_score": 0.6666666666666666,
-        "roc_auc_score": 1.0,
-        "average_precision_score": 1.0,
-        "calibration_error": 0.3333333333333333,
-        "brier_score": 0.22000000000000006
+        "binary_accuracy": 0.75,
+        "f1_score": 0.5454545454545454,
+        "roc_auc_score": 0.6354166666666666,
+        "average_precision_score": 0.7083333333333333,
+        "calibration_error": 0.3,
+        "brier_score": 0.197
     }
 }

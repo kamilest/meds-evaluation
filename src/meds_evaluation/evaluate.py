@@ -34,7 +34,6 @@ from meds_evaluation.utils import _resample
 
 def evaluate_bootstrapped_binary_classification(
     predictions: pl.DataFrame,
-    samples_per_subject=4,
     bootstrapping=100,
 ) -> dict[str, dict[str, float | list[ArrayLike]]]:
     """Evaluates a set of model predictions for binary classification tasks with bootstrap confidence.
@@ -42,8 +41,6 @@ def evaluate_bootstrapped_binary_classification(
     Args:
         predictions: a DataFrame following the MEDS label schema and additional columns for
         "predicted_value" and "predicted_probability".
-        samples_per_subject: the number of samples to take for each unique subject_id in the dataframe for
-        per-subject metrics.
         bootstrapping: number of bootstrap samples to take for confidence intervals.
         # TODO consider adding a parameter for the metric set to evaluate
 
@@ -55,19 +52,36 @@ def evaluate_bootstrapped_binary_classification(
         ValueError: if the predictions dataframe does not contain the necessary columns.
     """
     assert bootstrapping > 0, "Bootstrapping must be a positive integer."
+    validate_binary_classification_schema(predictions)
 
-    boot_res = {}
+    boot_res, all_keys = {}, set()
     for bi in range(bootstrapping):
-        boot_res[bi] = evaluate_binary_classification(predictions, samples_per_subject, resampling_seed=bi)
+        resampled_predictions = _resample(
+            predictions,
+            random_seed=bi,
+        )
+
+        true_values_resampled = resampled_predictions[BOOLEAN_VALUE_FIELD]
+        predicted_values_resampled = resampled_predictions[PREDICTED_BOOLEAN_VALUE_FIELD]
+        predicted_probabilities_resampled = resampled_predictions[PREDICTED_BOOLEAN_PROBABILITY_FIELD]
+
+        if predicted_values_resampled.is_null().all():
+            predicted_values_resampled = None
+
+        if predicted_probabilities_resampled.is_null().all():
+            predicted_probabilities_resampled = None
+
+        boot_res[bi] = _get_binary_classification_metrics(
+            true_values_resampled, predicted_values_resampled, predicted_probabilities_resampled
+        )
+        all_keys.update(boot_res[bi].keys())
 
     # Summarize the results
     results = {}
-    for sampling in boot_res[0].keys():
-        results[sampling] = {}
-        for metric in boot_res[0][sampling]:
-            metric_values = [boot_res[bi][sampling][metric] for bi in range(bootstrapping)]
-            results[sampling]["mean_" + metric] = np.mean(metric_values)
-            results[sampling]["std_" + metric] = np.std(metric_values)
+    for metric in all_keys:
+        metric_values = [boot_res[bi][metric] for bi in range(bootstrapping) if metric in boot_res[bi]]
+        results["mean_" + metric] = np.mean(metric_values)
+        results["std_" + metric] = np.std(metric_values)
 
     return results
 
@@ -155,7 +169,7 @@ def _get_binary_classification_metrics(
         results["binary_accuracy"] = accuracy_score(true_values, predicted_values)
         results["f1_score"] = f1_score(true_values, predicted_values)
 
-    if predicted_probabilities is not None:
+    if predicted_probabilities is not None and len(np.unique(true_values)) > 1:
         results["roc_auc_score"] = roc_auc_score(true_values, predicted_probabilities)
         results["average_precision_score"] = average_precision_score(true_values, predicted_probabilities)
 
