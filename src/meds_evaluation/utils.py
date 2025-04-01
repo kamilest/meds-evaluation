@@ -1,17 +1,14 @@
 import numpy as np
 import polars as pl
 
-from meds_evaluation.schema import SUBJECT_ID_FIELD
 
-
-def _resample(
-    predictions: pl.DataFrame, sampling_column=SUBJECT_ID_FIELD, n_samples=1, random_seed=0
-) -> pl.DataFrame:
+def _resample(predictions: pl.DataFrame, sampling_column=None, n_samples=1, random_seed=0) -> pl.DataFrame:
     """Samples (with replacement) the dataframe to represent each unique value in the sampling column equally.
 
     Args:
         predictions: a dataframe following the MEDS label schema
-        sampling_column: the dataframe column according to which to resample
+        sampling_column: the dataframe column according to which to resample.
+                         If None, resamples the entire dataframe.
         n_samples: the number of samples to take for each unique value in the sample_by column
 
     Returns:
@@ -22,10 +19,20 @@ def _resample(
 
     Examples:
     >>> _resample(pl.DataFrame({"a": [1, 2, 3, 4, 5, 6]}))
-    Traceback (most recent call last):
-    ...
-    ValueError: The model prediction dataframe does not contain the "subject_id" column.
-    >>> _resample(pl.DataFrame({"subject_id": [1, 2, 2, 3, 3, 3]}))
+    shape: (6, 1)
+    ┌─────┐
+    │ a   │
+    │ --- │
+    │ i64 │
+    ╞═════╡
+    │ 3   │
+    │ 3   │
+    │ 6   │
+    │ 3   │
+    │ 6   │
+    │ 6   │
+    └─────┘
+    >>> _resample(pl.DataFrame({"subject_id": [1, 2, 2, 3, 3, 3]}), sampling_column="subject_id")
     shape: (3, 1)
     ┌────────────┐
     │ subject_id │
@@ -36,7 +43,7 @@ def _resample(
     │ 2          │
     │ 3          │
     └────────────┘
-    >>> _resample(pl.DataFrame({"subject_id": [1, 2, 2, 3, 3, 3]}), n_samples=2)
+    >>> _resample(pl.DataFrame({"subject_id": [1, 2, 2, 3, 3, 3]}), sampling_column="subject_id", n_samples=2)
     shape: (6, 1)
     ┌────────────┐
     │ subject_id │
@@ -50,7 +57,7 @@ def _resample(
     │ 3          │
     │ 3          │
     └────────────┘
-    >>> _resample(pl.DataFrame({"subject_id": [1, 3, 4, 2, 2, 3, 3, 3, 1]}), n_samples=1)
+    >>> _resample(pl.DataFrame({"subject_id": [1, 3, 4, 2, 2, 3, 3, 3, 1]}), sampling_column="subject_id")
     shape: (4, 1)
     ┌────────────┐
     │ subject_id │
@@ -75,8 +82,9 @@ def _resample(
     │ 4   │
     └─────┘
     """
-
     # TODO resampling empty dataframe should throw an error
+    if sampling_column is None:
+        return predictions.sample(n=len(predictions), with_replacement=True, seed=random_seed)
 
     if sampling_column not in predictions.columns:
         raise ValueError(f'The model prediction dataframe does not contain the "{sampling_column}" column.')

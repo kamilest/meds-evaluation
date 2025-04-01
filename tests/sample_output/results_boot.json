@@ -1,0 +1,14 @@
+{
+    "mean_brier_score": 0.15586000000000003,
+    "std_brier_score": 0.07075592130698322,
+    "mean_roc_auc_score": 0.8374126984126984,
+    "std_roc_auc_score": 0.13188791341786904,
+    "mean_f1_score": 0.7903396978838154,
+    "std_f1_score": 0.1609239479555345,
+    "mean_calibration_error": 0.30075,
+    "std_calibration_error": 0.05048507755322909,
+    "mean_average_precision_score": 0.9219325396825395,
+    "std_average_precision_score": 0.09119608570960068,
+    "mean_binary_accuracy": 0.8030000000000002,
+    "std_binary_accuracy": 0.11786008654332476
+}

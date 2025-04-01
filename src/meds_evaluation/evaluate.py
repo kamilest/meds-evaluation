@@ -32,6 +32,60 @@ from meds_evaluation.utils import _resample
 #   detect which set of metrics to obtain based on the task and the contents of the model prediction dataframe
 
 
+def evaluate_bootstrapped_binary_classification(
+    predictions: pl.DataFrame,
+    bootstrapping=100,
+) -> dict[str, dict[str, float | list[ArrayLike]]]:
+    """Evaluates a set of model predictions for binary classification tasks with bootstrap confidence.
+
+    Args:
+        predictions: a DataFrame following the MEDS label schema and additional columns for
+        "predicted_value" and "predicted_probability".
+        bootstrapping: number of bootstrap samples to take for confidence intervals.
+        # TODO consider adding a parameter for the metric set to evaluate
+
+    Returns:
+        A dictionary mapping the metric names to their values.
+        The visual (curve-based) metrics will return the raw values needed to create the plot.
+
+    Raises:
+        ValueError: if the predictions dataframe does not contain the necessary columns.
+    """
+    assert bootstrapping > 0, "Bootstrapping must be a positive integer."
+    validate_binary_classification_schema(predictions)
+
+    boot_res, all_keys = {}, set()
+    for bi in range(bootstrapping):
+        resampled_predictions = _resample(
+            predictions,
+            random_seed=bi,
+        )
+
+        true_values_resampled = resampled_predictions[BOOLEAN_VALUE_FIELD]
+        predicted_values_resampled = resampled_predictions[PREDICTED_BOOLEAN_VALUE_FIELD]
+        predicted_probabilities_resampled = resampled_predictions[PREDICTED_BOOLEAN_PROBABILITY_FIELD]
+
+        if predicted_values_resampled.is_null().all():
+            predicted_values_resampled = None
+
+        if predicted_probabilities_resampled.is_null().all():
+            predicted_probabilities_resampled = None
+
+        boot_res[bi] = _get_binary_classification_metrics(
+            true_values_resampled, predicted_values_resampled, predicted_probabilities_resampled
+        )
+        all_keys.update(boot_res[bi].keys())
+
+    # Summarize the results
+    results = {}
+    for metric in all_keys:
+        metric_values = [boot_res[bi][metric] for bi in range(bootstrapping) if metric in boot_res[bi]]
+        results["mean_" + metric] = np.mean(metric_values)
+        results["std_" + metric] = np.std(metric_values)
+
+    return results
+
+
 def evaluate_binary_classification(
     predictions: pl.DataFrame, samples_per_subject=4, resampling_seed=0
 ) -> dict[str, dict[str, float | list[ArrayLike]]]:
@@ -115,7 +169,7 @@ def _get_binary_classification_metrics(
         results["binary_accuracy"] = accuracy_score(true_values, predicted_values)
         results["f1_score"] = f1_score(true_values, predicted_values)
 
-    if predicted_probabilities is not None:
+    if predicted_probabilities is not None and len(np.unique(true_values)) > 1:
         results["roc_auc_score"] = roc_auc_score(true_values, predicted_probabilities)
         results["average_precision_score"] = average_precision_score(true_values, predicted_probabilities)
 
