@@ -4,7 +4,7 @@ defaults:
   - override hydra/job_logging: disabled
 
 predictions_path: ???
-output_dir: ???
+output_file: ???
 samples_per_subject: 4
 resampling_seed: 0
 
