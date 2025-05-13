@@ -4,15 +4,15 @@
         "f1_score": 0.6666666666666666,
         "roc_auc_score": 1.0,
         "average_precision_score": 1.0,
-        "calibration_error": 0.3333333333333333,
-        "brier_score": 0.22000000000000006
+        "calibration_error": 0.3333333407839139,
+        "brier_score": 0.22000000009934126
     },
     "subjects_equally_weighted": {
         "binary_accuracy": 0.6666666666666666,
         "f1_score": 0.6666666666666666,
         "roc_auc_score": 1.0,
         "average_precision_score": 1.0,
-        "calibration_error": 0.3333333333333333,
-        "brier_score": 0.22000000000000006
+        "calibration_error": 0.3333333407839139,
+        "brier_score": 0.22000000009934126
     }
 }

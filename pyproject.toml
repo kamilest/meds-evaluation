@@ -20,12 +20,13 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "polars>=1.5.0",
+    "polars~=1.27.0",
     "pyarrow",
     "numpy",
     "scikit-learn",
     "hydra-core",
-    "loguru",
+    "meds~=0.4.0",
+    "flexible_schema",
 ]
 
 [tool.setuptools_scm]
@@ -36,6 +37,7 @@ addopts = [
   "--doctest-modules",
   "--ignore=docs",
 ]
+doctest_optionflags = ["NORMALIZE_WHITESPACE", "ELLIPSIS"]
 
 [project.optional-dependencies]
 dev = ["pre-commit<4"]

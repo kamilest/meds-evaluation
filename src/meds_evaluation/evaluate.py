@@ -19,13 +19,7 @@ from numpy.typing import ArrayLike
 from sklearn.calibration import calibration_curve
 from sklearn.metrics import accuracy_score, average_precision_score, brier_score_loss, f1_score, roc_auc_score
 
-from meds_evaluation.schema import (
-    BOOLEAN_VALUE_FIELD,
-    PREDICTED_BOOLEAN_PROBABILITY_FIELD,
-    PREDICTED_BOOLEAN_VALUE_FIELD,
-    SUBJECT_ID_FIELD,
-    validate_binary_classification_schema,
-)
+from meds_evaluation.schema import PredictionSchema
 from meds_evaluation.utils import _resample
 
 # TODO: input processing for different types of tasks
@@ -53,23 +47,26 @@ def evaluate_binary_classification(
         ValueError: if the predictions dataframe does not contain the necessary columns.
     """
     # Verify the dataframe schema to contain required fields for the binary classification metrics
-    validate_binary_classification_schema(predictions)
+    predictions = pl.from_arrow(PredictionSchema.align(predictions.to_arrow()))
 
-    true_values = predictions[BOOLEAN_VALUE_FIELD]
+    true_values = predictions[PredictionSchema.boolean_value_name]
 
-    predicted_values = predictions[PREDICTED_BOOLEAN_VALUE_FIELD]
-    predicted_probabilities = predictions[PREDICTED_BOOLEAN_PROBABILITY_FIELD]
+    predicted_values = predictions[PredictionSchema.predicted_boolean_value_name]
+    predicted_probabilities = predictions[PredictionSchema.predicted_boolean_probability_name]
 
     resampled_predictions = _resample(
         predictions,
-        sampling_column=SUBJECT_ID_FIELD,
+        sampling_column=PredictionSchema.subject_id_name,
         n_samples=samples_per_subject,
         random_seed=resampling_seed,
     )
 
-    true_values_resampled = resampled_predictions[BOOLEAN_VALUE_FIELD]
-    predicted_values_resampled = resampled_predictions[PREDICTED_BOOLEAN_VALUE_FIELD]
-    predicted_probabilities_resampled = resampled_predictions[PREDICTED_BOOLEAN_PROBABILITY_FIELD]
+    true_values_resampled = resampled_predictions[PredictionSchema.boolean_value_name]
+
+    predicted_values_resampled = resampled_predictions[PredictionSchema.predicted_boolean_value_name]
+    predicted_probabilities_resampled = resampled_predictions[
+        PredictionSchema.predicted_boolean_probability_name
+    ]
 
     if predicted_values.is_null().all():
         predicted_values = None
