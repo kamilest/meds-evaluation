@@ -1,11 +1,10 @@
 import numpy as np
 import polars as pl
-
-from meds_evaluation.schema import SUBJECT_ID_FIELD
+from meds import LabelSchema
 
 
 def _resample(
-    predictions: pl.DataFrame, sampling_column=SUBJECT_ID_FIELD, n_samples=1, random_seed=0
+    predictions: pl.DataFrame, sampling_column=LabelSchema.subject_id_name, n_samples=1, random_seed=0
 ) -> pl.DataFrame:
     """Samples (with replacement) the dataframe to represent each unique value in the sampling column equally.
 

@@ -1,67 +1,208 @@
-import polars as pl
-
-# Required fields
-SUBJECT_ID_FIELD = "subject_id"
-PREDICTION_TIME_FIELD = "prediction_time"
-
-# Ground truth field
-BOOLEAN_VALUE_FIELD = "boolean_value"
-
-# Prediction fields
-PREDICTED_BOOLEAN_VALUE_FIELD = "predicted_boolean_value"
-PREDICTED_BOOLEAN_PROBABILITY_FIELD = "predicted_boolean_probability"
+import pyarrow as pa
+from flexible_schema import Optional, SchemaValidationError, TableValidationError
+from meds import LabelSchema
 
 
-REQUIRED_FIELDS = {SUBJECT_ID_FIELD, PREDICTION_TIME_FIELD, BOOLEAN_VALUE_FIELD}
-PREDICTION_FIELDS = {PREDICTED_BOOLEAN_VALUE_FIELD, PREDICTED_BOOLEAN_PROBABILITY_FIELD}
+class PredictionSchema(LabelSchema):
+    """An extension of the MEDS label schema to include prediction information.
 
-BINARY_CLASSIFICATION_SCHEMA_DICT = {
-    "subject_id": pl.Int64,
-    "prediction_time": pl.Datetime,
-    "boolean_value": pl.Boolean,
-    "predicted_boolean_value": pl.Boolean,
-    "predicted_boolean_probability": pl.Float64,
-}
+    It should not be the case that both predicted_boolean_value and predicted_boolean_probability are not
+    present.
 
+    Attributes:
+        predicted_boolean_value: A boolean column indicating the predicted boolean value.
+        predicted_boolean_probability: A float column indicating the probability (or unnormalized score) of
+            the predicted boolean value.
 
-def validate_binary_classification_schema(df: pl.DataFrame) -> None:
-    """Checks if the predictions dataframe contains the necessary columns for binary classification metrics.
-
-    Args:
-        predictions: a DataFrame following the MEDS prediction schema for binary classification, containing at
-        least one of the binary classification columns: "predicted_boolean_value",
-        "predicted_boolean_probability".
-
-    Raises:
-        ValueError: if the predictions dataframe does not contain the necessary columns.
+    Examples:
+        >>> from datetime import datetime
+        >>> data = pa.Table.from_pylist([
+        ...     {
+        ...         "subject_id": 1, "prediction_time": datetime(2023, 1, 1), "boolean_value": True,
+        ...         "predicted_boolean_probability": 0.9
+        ...     },
+        ...     {
+        ...         "subject_id": 2, "prediction_time": datetime(2023, 1, 1), "boolean_value": False,
+        ...         "predicted_boolean_probability": 0.1
+        ...     }
+        ... ])
+        >>> PredictionSchema.align(data) # No errors
+        pyarrow.Table
+        subject_id: int64
+        prediction_time: timestamp[us]
+        boolean_value: bool
+        predicted_boolean_probability: float
+        ----
+        subject_id: [[1,2]]
+        prediction_time: [[2023-01-01 00:00:00.000000,2023-01-01 00:00:00.000000]]
+        boolean_value: [[true,false]]
+        predicted_boolean_probability: [[0.9,0.1]]
+        >>> data = pa.Table.from_pylist([
+        ...     {
+        ...         "subject_id": 1, "prediction_time": datetime(2023, 1, 1), "boolean_value": True,
+        ...         "predicted_boolean_value": True, "predicted_boolean_probability": 0.9
+        ...     },
+        ...     {
+        ...         "subject_id": 2, "prediction_time": datetime(2023, 1, 1), "boolean_value": False,
+        ...         "predicted_boolean_value": False, "predicted_boolean_probability": 0.1
+        ...     }
+        ... ])
+        >>> PredictionSchema.align(data) # No errors
+        pyarrow.Table
+        subject_id: int64
+        prediction_time: timestamp[us]
+        boolean_value: bool
+        predicted_boolean_value: bool
+        predicted_boolean_probability: float
+        ----
+        subject_id: [[1,2]]
+        prediction_time: [[2023-01-01 00:00:00.000000,2023-01-01 00:00:00.000000]]
+        boolean_value: [[true,false]]
+        predicted_boolean_value: [[true,false]]
+        predicted_boolean_probability: [[0.9,0.1]]
+        >>> data = pa.Table.from_pylist([
+        ...     {
+        ...         "subject_id": 1, "prediction_time": datetime(2023, 1, 1), "boolean_value": True,
+        ...         "predicted_boolean_value": True
+        ...     },
+        ...     {
+        ...         "subject_id": 2, "prediction_time": datetime(2023, 1, 1), "boolean_value": False,
+        ...         "predicted_boolean_value": False
+        ...     }
+        ... ])
+        >>> PredictionSchema.align(data) # No errors
+        pyarrow.Table
+        subject_id: int64
+        prediction_time: timestamp[us]
+        boolean_value: bool
+        predicted_boolean_value: bool
+        ----
+        subject_id: [[1,2]]
+        prediction_time: [[2023-01-01 00:00:00.000000,2023-01-01 00:00:00.000000]]
+        boolean_value: [[true,false]]
+        predicted_boolean_value: [[true,false]]
+        >>> schema = pa.schema([
+        ...     ("subject_id", PredictionSchema.subject_id_dtype),
+        ...     ("prediction_time", PredictionSchema.prediction_time_dtype),
+        ...     ("boolean_value", PredictionSchema.boolean_value_dtype),
+        ...     ("predicted_boolean_value", PredictionSchema.predicted_boolean_value_dtype),
+        ...     ("predicted_boolean_probability", PredictionSchema.predicted_boolean_probability_dtype),
+        ... ])
+        >>> data = pa.Table.from_pylist([
+        ...     {
+        ...         "subject_id": 1, "prediction_time": datetime(2023, 1, 1), "boolean_value": True,
+        ...         "predicted_boolean_value": None, "predicted_boolean_probability": 0.9
+        ...     },
+        ...     {
+        ...         "subject_id": 2, "prediction_time": datetime(2023, 1, 1), "boolean_value": False,
+        ...         "predicted_boolean_value": None, "predicted_boolean_probability": 0.1
+        ...     }
+        ... ], schema=schema)
+        >>> PredictionSchema.align(data) # No errors
+        pyarrow.Table
+        subject_id: int64
+        prediction_time: timestamp[us]
+        boolean_value: bool
+        predicted_boolean_value: bool
+        predicted_boolean_probability: float
+        ----
+        subject_id: [[1,2]]
+        prediction_time: [[2023-01-01 00:00:00.000000,2023-01-01 00:00:00.000000]]
+        boolean_value: [[true,false]]
+        predicted_boolean_value: [[null,null]]
+        predicted_boolean_probability: [[0.9,0.1]]
+        >>> data = pa.Table.from_pylist([
+        ...     {
+        ...         "subject_id": 1, "prediction_time": datetime(2023, 1, 1), "boolean_value": True,
+        ...         "predicted_boolean_value": True, "predicted_boolean_probability": None
+        ...     },
+        ...     {
+        ...         "subject_id": 2, "prediction_time": datetime(2023, 1, 1), "boolean_value": False,
+        ...         "predicted_boolean_value": False, "predicted_boolean_probability": None
+        ...     }
+        ... ], schema=schema)
+        >>> PredictionSchema.align(data) # No errors
+        pyarrow.Table
+        subject_id: int64
+        prediction_time: timestamp[us]
+        boolean_value: bool
+        predicted_boolean_value: bool
+        predicted_boolean_probability: float
+        ----
+        subject_id: [[1,2]]
+        prediction_time: [[2023-01-01 00:00:00.000000,2023-01-01 00:00:00.000000]]
+        boolean_value: [[true,false]]
+        predicted_boolean_value: [[true,false]]
+        predicted_boolean_probability: [[null,null]]
+        >>> data_invalid_schema = pa.Table.from_pylist([
+        ...     {"subject_id": 1, "prediction_time": datetime(2023, 1, 1), "boolean_value": True},
+        ...     {"subject_id": 2, "prediction_time": datetime(2023, 1, 1), "boolean_value": False}
+        ... ])
+        >>> PredictionSchema.align(data_invalid_schema) # Raises SchemaValidationError
+        Traceback (most recent call last):
+            ...
+        flexible_schema.exceptions.SchemaValidationError: At least one of predicted_boolean_value or
+            predicted_boolean_probability must be present.
+        >>> data_invalid_contents = pa.Table.from_pylist(
+        ...     [
+        ...         {
+        ...             "subject_id": 1, "prediction_time": datetime(2023, 1, 1), "boolean_value": True,
+        ...             "predicted_boolean_value": None, "predicted_boolean_probability": None
+        ...         },
+        ...         {
+        ...             "subject_id": 2, "prediction_time": datetime(2023, 1, 1), "boolean_value": False,
+        ...             "predicted_boolean_value": None, "predicted_boolean_probability": None
+        ...         }
+        ...     ],
+        ...     schema=schema
+        ... )
+        >>> PredictionSchema.align(data_invalid_contents) # Raises TableValidationError
+        Traceback (most recent call last):
+            ...
+        flexible_schema.exceptions.TableValidationError: At least one of predicted_boolean_value or
+            predicted_boolean_probability must be present and not all null.
+            predicted_boolean_value is all null.
+            predicted_boolean_probability is all null.
     """
-    df_type_dict = dict(df.schema)
 
-    # Check required fields
-    df_fields = set(df_type_dict.keys())
-    missing_required_fields = REQUIRED_FIELDS - df_fields
-    if missing_required_fields:
-        raise ValueError(f"Missing required fields: {missing_required_fields}")
-    else:
-        for required_field in REQUIRED_FIELDS:
-            if df_type_dict[required_field] != BINARY_CLASSIFICATION_SCHEMA_DICT[required_field]:
-                raise ValueError(
-                    f"Mismatched type for {required_field}: expected {df_type_dict[required_field]}, "
-                    f"got {BINARY_CLASSIFICATION_SCHEMA_DICT[required_field]}"
-                )
+    predicted_boolean_value: Optional(pa.bool_())
+    predicted_boolean_probability: Optional(pa.float32())
 
-    # Check at least one of the prediction fields is present
-    prediction_fields = PREDICTION_FIELDS & df_fields
-    if not prediction_fields:
-        raise ValueError(f"Missing all prediction fields: {PREDICTION_FIELDS}")
-    elif all(df[field].is_null().all() for field in prediction_fields):
-        raise ValueError(
-            f"At least one of the prediction fields should have non-null values: {PREDICTION_FIELDS}"
-        )
-    else:
-        for prediction_field in prediction_fields:
-            if df_type_dict[prediction_field] != BINARY_CLASSIFICATION_SCHEMA_DICT[prediction_field]:
-                raise ValueError(
-                    f"Mismatched type for {prediction_field}: expected {df_type_dict[prediction_field]}, "
-                    f"got {BINARY_CLASSIFICATION_SCHEMA_DICT[prediction_field]}"
-                )
+    @classmethod
+    def _validate_schema(cls, schema: pa.Schema) -> None:
+        """Additionally checks that at least one of the two added columns are present in the table."""
+        super()._validate_schema(schema)
+
+        if not (
+            (cls.predicted_boolean_value_name in schema.names)
+            or (cls.predicted_boolean_probability_name in schema.names)
+        ):
+            raise SchemaValidationError(
+                f"At least one of {cls.predicted_boolean_value_name} or "
+                f"{cls.predicted_boolean_probability_name} must be present."
+            )
+
+    @classmethod
+    def _validate_table(cls, tbl: pa.Table) -> None:
+        """Additionally checks that at least one of the two added columns are present in the table."""
+        super()._validate_table(tbl)
+
+        any_not_null = False
+        msg = []
+
+        for col in (cls.predicted_boolean_value_name, cls.predicted_boolean_probability_name):
+            if col in tbl.schema.names:
+                if cls._all_null(tbl, col):
+                    msg.append(f"{col} is all null.")
+                else:
+                    any_not_null = True
+            else:
+                msg.append(f"{col} is not present.")
+
+        if not any_not_null:
+            err = (
+                f"At least one of {cls.predicted_boolean_value_name} or "
+                f"{cls.predicted_boolean_probability_name} must be present and not all null."
+            )
+            err = "\n".join([err, *msg])
+            raise TableValidationError(msg=err)

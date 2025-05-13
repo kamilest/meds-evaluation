@@ -9,7 +9,7 @@ from omegaconf import DictConfig
 
 from meds_evaluation.__main__ import main as binary_classification_main
 from meds_evaluation.evaluate import evaluate_binary_classification
-from meds_evaluation.schema import BINARY_CLASSIFICATION_SCHEMA_DICT
+from meds_evaluation.schema import PredictionSchema
 from tests import BINARY_CLASSIFICATION_SMALL_PATH, TEST_OUTPUT_FILE
 
 SAMPLE_CONFIG = DictConfig(
@@ -22,19 +22,24 @@ SAMPLE_CONFIG = DictConfig(
 )
 
 
-BINARY_CLASSIFICATION_SMALL = pl.DataFrame(
-    {
-        "subject_id": [1, 2, 3],
-        "prediction_time": [
-            datetime(2020, 1, 1, 12, 0, 0),
-            datetime(2020, 1, 1, 12, 0, 0),
-            datetime(2020, 1, 1, 12, 0, 0),
-        ],
-        "boolean_value": [True, False, True],
-        "predicted_boolean_value": [True, False, False],
-        "predicted_boolean_probability": [0.9, 0.1, 0.2],
-    },
-    schema=BINARY_CLASSIFICATION_SCHEMA_DICT,
+def align_pl(df: pl.DataFrame) -> pl.DataFrame:
+    return pl.from_arrow(PredictionSchema.align(df.to_arrow()))
+
+
+BINARY_CLASSIFICATION_SMALL = align_pl(
+    pl.DataFrame(
+        {
+            "subject_id": [1, 2, 3],
+            "prediction_time": [
+                datetime(2020, 1, 1, 12, 0, 0),
+                datetime(2020, 1, 1, 12, 0, 0),
+                datetime(2020, 1, 1, 12, 0, 0),
+            ],
+            "boolean_value": [True, False, True],
+            "predicted_boolean_value": [True, False, False],
+            "predicted_boolean_probability": [0.9, 0.1, 0.2],
+        },
+    )
 )
 
 EXPECTED_OUTPUT_SMALL = {
@@ -76,19 +81,20 @@ def test_evaluate_binary_classification_small():
 
 
 def test_evaluate_binary_classification_small_null_values():
-    input = pl.DataFrame(
-        {
-            "subject_id": [1, 2, 3],
-            "prediction_time": [
-                datetime(2020, 1, 1, 12, 0, 0),
-                datetime(2020, 1, 1, 12, 0, 0),
-                datetime(2020, 1, 1, 12, 0, 0),
-            ],
-            "boolean_value": [True, False, True],
-            "predicted_boolean_value": [None, None, None],
-            "predicted_boolean_probability": [0.9, 0.1, 0.2],
-        },
-        schema=BINARY_CLASSIFICATION_SCHEMA_DICT,
+    input = align_pl(
+        pl.DataFrame(
+            {
+                "subject_id": [1, 2, 3],
+                "prediction_time": [
+                    datetime(2020, 1, 1, 12, 0, 0),
+                    datetime(2020, 1, 1, 12, 0, 0),
+                    datetime(2020, 1, 1, 12, 0, 0),
+                ],
+                "boolean_value": [True, False, True],
+                "predicted_boolean_value": [None, None, None],
+                "predicted_boolean_probability": [0.9, 0.1, 0.2],
+            },
+        )
     )
 
     expected_output = {
@@ -114,19 +120,20 @@ def test_evaluate_binary_classification_small_null_values():
 
 
 def test_evaluate_binary_classification_small_null_probabilities():
-    input = pl.DataFrame(
-        {
-            "subject_id": [1, 2, 3],
-            "prediction_time": [
-                datetime(2020, 1, 1, 12, 0, 0),
-                datetime(2020, 1, 1, 12, 0, 0),
-                datetime(2020, 1, 1, 12, 0, 0),
-            ],
-            "boolean_value": [True, False, True],
-            "predicted_boolean_value": [True, False, False],
-            "predicted_boolean_probability": [None, None, None],
-        },
-        schema=BINARY_CLASSIFICATION_SCHEMA_DICT,
+    input = align_pl(
+        pl.DataFrame(
+            {
+                "subject_id": [1, 2, 3],
+                "prediction_time": [
+                    datetime(2020, 1, 1, 12, 0, 0),
+                    datetime(2020, 1, 1, 12, 0, 0),
+                    datetime(2020, 1, 1, 12, 0, 0),
+                ],
+                "boolean_value": [True, False, True],
+                "predicted_boolean_value": [True, False, False],
+                "predicted_boolean_probability": [None, None, None],
+            },
+        )
     )
 
     expected_output = {
