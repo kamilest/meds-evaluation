@@ -2,6 +2,7 @@
 
 [![PyPI - Version](https://img.shields.io/pypi/v/meds-evaluation)](https://pypi.org/project/meds-evaluation/)
 ![python](https://img.shields.io/badge/-Python_3.11-blue?logo=python&logoColor=white)
+[![MEDS v0.4](https://img.shields.io/badge/MEDS-0.4-blue)](https://medical-event-data-standard.github.io/)
 [![tests](https://github.com/kamilest/meds-evaluation/actions/workflows/tests.yaml/badge.svg)](https://github.com/kamilest/meds-evaluation/actions/workflows/tests.yml)
 [![code-quality](https://github.com/kamilest/meds-evaluation/actions/workflows/code-quality-main.yaml/badge.svg)](https://github.com/kamilest/meds-evaluation/actions/workflows/code-quality-main.yaml)
 [![hydra](https://img.shields.io/badge/Config-Hydra_1.3-89b8cd)](https://hydra.cc/)
