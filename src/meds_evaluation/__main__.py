@@ -1,17 +1,19 @@
 """Main entry point for the meds_evaluation package."""
 import json
+import logging
 from datetime import datetime
 from importlib.resources import files
 from pathlib import Path
 
 import hydra
 import polars as pl
-from loguru import logger
 from omegaconf import DictConfig, OmegaConf
 
 from meds_evaluation.evaluate import evaluate_binary_classification
 
 config_yaml = files("meds_evaluation").joinpath("configs/meds_evaluation.yaml")
+
+logger = logging.getLogger(__name__)
 
 
 @hydra.main(version_base=None, config_path=str(config_yaml.parent.resolve()), config_name=config_yaml.stem)
