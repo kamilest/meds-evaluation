@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+title: MEDS Evaluation
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Kamilė
+    family-names: Stankevičiūtė
+    email: ks830@cam.ac.uk
+    affiliation: University of Cambridge
+  - given-names: Vincent
+    family-names: Jeanselme
+    affiliation: Columbia University
+  - given-names: Simon A
+    family-names: Lee
+    affiliation: UCLA
+  - given-names: Nassim
+    family-names: Oufattole
+    affiliation: MIT
+  - given-names: Matthew BA
+    family-names: McDermott
+    affiliation: Columbia University
+url: 'https://github.com/kamilest/meds-evaluation'
+repository-code: 'https://github.com/kamilest/meds-evaluation'
+license: MIT
+version: 0.0.4
