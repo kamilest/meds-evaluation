@@ -31,6 +31,9 @@ dependencies = [
     "flexible_schema>=0.1,<0.2",
 ]
 
+[dependency-groups]
+dev = ["pre-commit<4", "ruff", "pytest>=7", "pytest-cov>=4"]
+
 [tool.setuptools_scm]
 
 [tool.pytest.ini_options]
@@ -40,10 +43,6 @@ addopts = [
   "--ignore=docs",
 ]
 doctest_optionflags = ["NORMALIZE_WHITESPACE", "ELLIPSIS"]
-
-[project.optional-dependencies]
-dev = ["pre-commit<4"]
-tests = ["pytest>=7", "pytest-cov>=4"]
 
 [project.scripts]
 meds-evaluation-cli = "meds_evaluation.__main__:main"
