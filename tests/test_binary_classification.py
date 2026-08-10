@@ -119,6 +119,24 @@ def test_evaluate_binary_classification_small_null_values():
     assert evaluate_binary_classification(input) == expected_output
 
 
+def test_evaluate_binary_classification_without_predicted_values():
+    input = BINARY_CLASSIFICATION_SMALL.drop(PredictionSchema.predicted_boolean_value_name)
+
+    expected_output = {
+        weighting: pytest.approx(
+            {
+                "roc_auc_score": 1.0,
+                "average_precision_score": 1.0,
+                "calibration_error": 0.3333333333333333,
+                "brier_score": 0.22000000000000006,
+            }
+        )
+        for weighting in ("samples_equally_weighted", "subjects_equally_weighted")
+    }
+
+    assert evaluate_binary_classification(input) == expected_output
+
+
 def test_evaluate_binary_classification_small_null_probabilities():
     input = align_pl(
         pl.DataFrame(

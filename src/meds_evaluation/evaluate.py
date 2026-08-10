@@ -26,6 +26,15 @@ from meds_evaluation.utils import _resample
 #   detect which set of metrics to obtain based on the task and the contents of the model prediction dataframe
 
 
+def _get_optional_prediction_column(predictions: pl.DataFrame, column_name: str) -> pl.Series | None:
+    """Return a usable optional prediction column, if one is present."""
+    if column_name not in predictions.columns:
+        return None
+
+    column = predictions[column_name]
+    return None if column.is_null().all() else column
+
+
 def evaluate_binary_classification(
     predictions: pl.DataFrame, samples_per_subject=4, resampling_seed=0
 ) -> dict[str, dict[str, float | list[ArrayLike]]]:
@@ -51,8 +60,12 @@ def evaluate_binary_classification(
 
     true_values = predictions[PredictionSchema.boolean_value_name]
 
-    predicted_values = predictions[PredictionSchema.predicted_boolean_value_name]
-    predicted_probabilities = predictions[PredictionSchema.predicted_boolean_probability_name]
+    predicted_values = _get_optional_prediction_column(
+        predictions, PredictionSchema.predicted_boolean_value_name
+    )
+    predicted_probabilities = _get_optional_prediction_column(
+        predictions, PredictionSchema.predicted_boolean_probability_name
+    )
 
     resampled_predictions = _resample(
         predictions,
@@ -63,18 +76,12 @@ def evaluate_binary_classification(
 
     true_values_resampled = resampled_predictions[PredictionSchema.boolean_value_name]
 
-    predicted_values_resampled = resampled_predictions[PredictionSchema.predicted_boolean_value_name]
-    predicted_probabilities_resampled = resampled_predictions[
-        PredictionSchema.predicted_boolean_probability_name
-    ]
-
-    if predicted_values.is_null().all():
-        predicted_values = None
-        predicted_values_resampled = None
-
-    if predicted_probabilities.is_null().all():
-        predicted_probabilities = None
-        predicted_probabilities_resampled = None
+    predicted_values_resampled = _get_optional_prediction_column(
+        resampled_predictions, PredictionSchema.predicted_boolean_value_name
+    )
+    predicted_probabilities_resampled = _get_optional_prediction_column(
+        resampled_predictions, PredictionSchema.predicted_boolean_probability_name
+    )
 
     results = {
         "samples_equally_weighted": _get_binary_classification_metrics(
